@@ -1,0 +1,2 @@
+将自己的route二进制文件命名为"srouted",放在和脚本同一个目录下
+script.rb测试路由功能，sample_final_test.rb测试forwarding部分功能

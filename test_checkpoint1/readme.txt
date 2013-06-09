@@ -1,0 +1,1 @@
+Copy your sircd binary into this folder and run the checkpoint1 ruby script. Good Luck:)
