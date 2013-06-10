@@ -11,7 +11,7 @@ LIBS	= -pthread
 COM     = ../common/
 
 
-OBJECTS	= srouted.o rtlib.o csapp.o util.o socket.o udp.o rtgrading.o
+OBJECTS	= srouted.o rtlib.o csapp.o util.o socket.o udp.o rtgrading.o lsa_list.o
 
 all:	$(TARGET)
 
@@ -37,6 +37,9 @@ rtgrading.o: rtgrading.c rtgrading.h
 	$(CC) $(CFLAGS) -c -o $@ $<	
 
 udp.o: udp.c udp.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+lsa_list.o: lsa_list.c lsa_list.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 %.o: %.c

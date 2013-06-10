@@ -7,7 +7,7 @@
 
 #define MAX_LINK_ENTRIES 32
 
-struct LSA {
+typedef struct LSA_t {
 	char version;
 	char ttl;
 	short type;
@@ -22,7 +22,7 @@ struct LSA {
 	int link_entries[MAX_LINK_ENTRIES];
 	char user_entries[FD_SETSIZE][MAX_NAME_LENGTH];
 	char channel_entries[FD_SETSIZE][MAX_NAME_LENGTH];
-};
+} LSA;
 
 int init_udp_server_socket(int port);
 

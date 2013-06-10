@@ -32,7 +32,8 @@ void (*handler[])(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int to
 
 /* Main */
 int main( int argc, char *argv[] ) {
-    int listen_server_fd, send_to_server_fd, udp_fd, nready,maxfd;
+    int listen_server_fd, udp_fd, nready,maxfd;
+    int send_to_server_fd = -1;
     fd_set read_set;
     int is_connect_server = 0;  //whether has connected to server
     struct timeval timeout;
@@ -79,7 +80,7 @@ int main( int argc, char *argv[] ) {
                 maxfd = maxfd > send_to_server_fd ? maxfd : send_to_server_fd;
             }
             //new command from server INCOMMING_SERVER_CMD
-            if(is_connect_server & FD_ISSET(send_to_server_fd,&read_set)){
+            if(is_connect_server && FD_ISSET(send_to_server_fd,&read_set)){
                 if(Rio_readlineb(&rio,buf,MAXLINE) > 0){
                     get_msg(buf,buf);
                     handle_command(buf,rio.rio_fd);
