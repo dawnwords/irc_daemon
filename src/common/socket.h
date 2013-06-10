@@ -15,7 +15,6 @@ typedef struct {                    /* represents a pool of connected descriptor
     rio_t clientrio[FD_SETSIZE];    /* set of active read buffers */
 } pool;
 
-int init_udp_server_socket(int port);
 int init_unblocking_server_socket(int port);
 
 void unblock_socket(int socketfd);
