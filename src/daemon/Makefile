@@ -10,14 +10,14 @@ LIBS	= -pthread
 
 COM     = ../common/
 
-OBJECTS	= srouted.o rtlib.o csapp.o util.o socket.o
+OBJECTS	= srouted.o rtlib.o csapp.o util.o socket.o rtgrading.o
 
 all:	$(TARGET)
 
 $(TARGET): $(OBJECTS)
 	$(LD) $(LFLAGS) $(LIBS) -o $@ $^
 
-srouted.o: srouted.c srouted.h
+srouted.o: srouted.c srouted.h rtgrading.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 rtlib.o: $(COM)rtlib.c $(COM)rtlib.h $(COM)csapp.h
@@ -30,6 +30,9 @@ util.o: $(COM)util.c $(COM)util.h
 	$(CC) $(CFLAGS) -c -o $@ $<	
 
 socket.o: $(COM)socket.c $(COM)socket.h
+	$(CC) $(CFLAGS) -c -o $@ $<	
+
+rtgrading.o: rtgrading.c rtgrading.h
 	$(CC) $(CFLAGS) -c -o $@ $<	
 
 %.o: %.c

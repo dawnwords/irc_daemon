@@ -8,7 +8,7 @@ int init_udp_server_socket(int port){
     int listenfd; 
     struct sockaddr_in serveraddr;
 
-    if ((listenfd = socket( PF_INET, SOCK_DGRAM, 0 )) < 0)
+    if ((listenfd = socket( AF_INET, SOCK_DGRAM, 0 )) < 0)
         unix_error("Creating UDP Socket Error");
 
     /* Listenfd will be an endpoint for all requests to port

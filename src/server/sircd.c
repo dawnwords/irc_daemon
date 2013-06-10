@@ -171,12 +171,8 @@ void check_clients() {
                 get_msg(buf,buf);
                 request_check(i, buf);
 
-                int nleft;
-                while( (nleft = rio.rio_cnt) > 0 ){
-                    //debug
-                    // printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-                    // printf("%s\n", "check_clients: rio_buf contains unread message");
-                    // printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+                while( rio.rio_cnt > 0 ){
+                    
                     Rio_readlineb(&rio,buf,MAXLINE);
                     get_msg(buf,buf);
                     request_check(i,buf);
