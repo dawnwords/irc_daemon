@@ -10,7 +10,7 @@ LIBS	= -pthread
 
 COM     = ../common/
 
-OBJECTS	= srouted.o rtlib.o csapp.o util.o socket.o
+OBJECTS	= srouted.o rtlib.o csapp.o util.o socket.o udp.o
 
 all:	$(TARGET)
 
@@ -31,6 +31,9 @@ util.o: $(COM)util.c $(COM)util.h
 
 socket.o: $(COM)socket.c $(COM)socket.h
 	$(CC) $(CFLAGS) -c -o $@ $<	
+
+udp.o: udp.c udp.h
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
