@@ -1,25 +1,25 @@
 #include "lsa_list.h"
 
-LSA_list* header,footer;
+LSA_list *lsa_header, *lsa_footer;
 
 void init_LSA_list(){
-    header = (LSA_list*) Calloc(1,sizeof(LSA_list));
-    footer = (LSA_list*) Calloc(1,sizeof(LSA_list));
-    header->next = footer;
-    footer->prev = header;    
+    lsa_header = (LSA_list*) Calloc(1,sizeof(LSA_list));
+    lsa_footer = (LSA_list*) Calloc(1,sizeof(LSA_list));
+    lsa_header->next = lsa_footer;
+    lsa_footer->prev = lsa_header;    
 }
 
-void free_LSA_list(LSA_list* LSA){
-    if(LSA){
-        if(c->package)
-            Free(c->package);
-        Free(LSA);
+void free_LSA_list(LSA_list* LSA_entry){
+    if(LSA_entry){
+        if(LSA_entry->package)
+            Free(LSA_entry->package);
+        Free(LSA_entry);
     }
 }
 
 LSA_list* find_LSA_list(int sender_id){
     LSA_list* temp;
-    for(temp = header; temp != footer; temp = temp->next)
+    for(temp = lsa_header; temp != lsa_footer; temp = temp->next)
         if(temp->package->sender_id == sender_id)
             return temp;
     return NULL;
@@ -41,15 +41,15 @@ int insert_LSA_list(LSA* new_package){
 	new_LSA->package = new_package;
 	ctime(&new_LSA->receive_time);
 
-	new_LSA->prev = footer->prev;
-	new_LSA->next = footer;
-	footer->prev->next = new_LSA;
-	footer->prev = new_LSA;
+	new_LSA->prev = lsa_footer->prev;
+	new_LSA->next = lsa_footer;
+	lsa_footer->prev->next = new_LSA;
+	lsa_footer->prev = new_LSA;
 
 	return CONTINUE_FLOODING;		
 }
 
-int remove_LSA_list(LSA_list* LSA_entry){
+void remove_LSA_list(LSA_list* LSA_entry){
 	LSA_entry->prev->next = LSA_entry->next;
 	LSA_entry->next->prev = LSA_entry->prev;
 	free_LSA_list(LSA_entry);

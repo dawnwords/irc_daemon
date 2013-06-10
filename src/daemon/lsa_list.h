@@ -10,7 +10,7 @@
 
 typedef struct LSA_list_struct{
 	time_t receive_time;
-    struct LSA* package;    
+    LSA* package;    
     struct LSA_list_struct* prev;
     struct LSA_list_struct* next;
 } LSA_list;
@@ -19,6 +19,6 @@ void init_LSA_list();
 void free_LSA_list(LSA_list* LSA);
 LSA_list* find_LSA_list(int sender_id);
 int insert_LSA_list(LSA* new_package);
-int remove_LSA_list(LSA_list* LSA_entry);
+void remove_LSA_list(LSA_list* LSA_entry);
 
 #endif /*__LSA_LIST_H__*/
