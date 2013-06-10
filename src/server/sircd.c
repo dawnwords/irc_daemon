@@ -167,8 +167,20 @@ void check_clients() {
         if ((connfd > 0) && FD_ISSET(connfd, &p.ready_set)){
             p.nready--;
             if (Rio_readlineb(&rio, buf, MAXLINE) > 0) {
+                
                 get_msg(buf,buf);
                 request_check(i, buf);
+
+                int nleft;
+                while( (nleft = rio.rio_cnt) > 0 ){
+                    //debug
+                    // printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+                    // printf("%s\n", "check_clients: rio_buf contains unread message");
+                    // printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+                    Rio_readlineb(&rio,buf,MAXLINE);
+                    get_msg(buf,buf);
+                    request_check(i,buf);
+                }
             } else{/* EOF detected. User Exit */
                 //debug
                 char buf[MAX_MSG_LEN];
