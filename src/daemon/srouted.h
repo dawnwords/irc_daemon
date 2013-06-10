@@ -31,6 +31,5 @@ void handle_CHANTABLE(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], in
 
 void handle_command(char *msg, int connfd);
 
-int wait_for_event(param_t *paramp);
-void check_clients();
+int is_time_to_advertise(time_t *last_time);
 #endif /*__SROUTED_H__*/

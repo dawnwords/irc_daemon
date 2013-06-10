@@ -41,6 +41,9 @@ int main( int argc, char *argv[] ) {
     struct sockaddr_in clientaddr;
     socklen_t clientlen = sizeof(struct sockaddr_in);
     time_t last_time;
+    rio_t rio;
+    char buf[MAXLINE];
+
 
     rt_init(argc, argv);  //must call at beginning
     init_daemon( argc, argv ); // parse command line and fill global variable
@@ -49,7 +52,7 @@ int main( int argc, char *argv[] ) {
     udp_fd = init_udp_server_socket(curr_node_config_entry->routing_port);
 
     FD_ZERO(&read_set);
-    maxfd = max(listen_server_fd,udp_fd);
+    maxfd = listen_server_fd > udp_fd ? listen_server_fd:udp_fd;
     while (1) {
         
         //IT_IS_TIME_TO_ADVERTISEMENT
@@ -65,18 +68,22 @@ int main( int argc, char *argv[] ) {
             FD_SET(send_to_server_fd,&read_set);
         }
 
-        int nready;
         if( (nready = Select(maxfd+1, &read_set, NULL, NULL, &timeout)) < 0){
             unix_error("select error in srouted\n");
         }else if(nready > 0){
             //listen_server_fd selected, server ask for a tcp socket connection
             if( FD_ISSET(listen_server_fd,&read_set) ){
-                send_to_server_fd = Accept(listen_server_fd, (SA *)clientaddr, &clientlen);
+                send_to_server_fd = Accept(listen_server_fd, (SA *)&clientaddr, &clientlen);
+                Rio_readinitb(&rio,send_to_server_fd);
                 is_connect_server = 1;
+                maxfd = maxfd > send_to_server_fd ? maxfd : send_to_server_fd;
             }
             //new command from server INCOMMING_SERVER_CMD
             if(is_connect_server & FD_ISSET(send_to_server_fd,&read_set)){
-                
+                if(Rio_readlineb(&rio,buf,MAXLINE) > 0){
+                    get_msg(buf,buf);
+                    handle_command(buf,rio.rio_fd);
+                }
             }
             //LSA from daemon INCOMMING_ADVERTISEMENT
             if(FD_ISSET(udp_fd,&read_set)){
@@ -93,7 +100,7 @@ int is_time_to_advertise(time_t *last_time){
     time_t cur_time;
     ctime(&cur_time);
     long elapsed_time = cur_time - *last_time;
-    if(args->advertisement_cycle_time >= elapsed_time){
+    if(args.advertisement_cycle_time >= elapsed_time){
         *last_time = cur_time;
         return 1;
     }
