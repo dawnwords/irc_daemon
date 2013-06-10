@@ -172,7 +172,6 @@ void check_clients() {
                 request_check(i, buf);
 
                 while( rio.rio_cnt > 0 ){
-                    
                     Rio_readlineb(&rio,buf,MAXLINE);
                     get_msg(buf,buf);
                     request_check(i,buf);
