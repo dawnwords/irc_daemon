@@ -18,7 +18,7 @@ typedef struct LSA_list_struct{
 void init_LSA_list();
 void free_LSA_list(LSA_list* LSA);
 LSA_list* find_LSA_list(int sender_id);
-int insert_LSA_list(LSA* new_package);
+int insert_LSA_list(LSA* new_package,LSA_list* LSA_to_send);
 void remove_LSA_list(LSA_list* LSA_entry);
 
 #endif /*__LSA_LIST_H__*/
