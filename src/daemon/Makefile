@@ -18,7 +18,7 @@ all:	$(TARGET)
 $(TARGET): $(OBJECTS)
 	$(LD) $(LFLAGS) $(LIBS) -o $@ $^
 
-srouted.o: srouted.c srouted.h rtgrading.h
+srouted.o: srouted.c srouted.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 rtlib.o: $(COM)rtlib.c $(COM)rtlib.h $(COM)csapp.h

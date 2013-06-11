@@ -7,6 +7,8 @@
 #include "../common/util.h"
 #include "../common/socket.h"
 #include "udp.h"
+#include "rtgrading.h"
+#include "lsa_list.h"
 
 
 #define INCOMING_ADVERTISEMENT 			1
@@ -21,6 +23,9 @@ typedef struct input_param{
 typedef union param{
 	input_param_t input; /*input parameter*/
 } param_t;
+
+void init_self_lsa(int node_id);
+void process_incoming_lsa(int udp_fd);
 
 void handle_ADDUSER(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num);
 void handle_REMOVEUSER(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num);

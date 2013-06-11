@@ -25,15 +25,17 @@ LSA_list* find_LSA_list(int sender_id){
     return NULL;
 }
 
-int insert_LSA_list(LSA* new_package){
+int insert_LSA_list(LSA* new_package,LSA_list* LSA_to_send){
 	LSA_list* old_LSA = find_LSA_list(new_package->sender_id);
 	int flag = new_package->seq_num - old_LSA->package->seq_num;
 
 	if(old_LSA){
 		if(flag == 0)
 			return DISCARD;
-		if(flag < 0)
+		if(flag < 0){
+			LSA_to_send = old_LSA;
 			return SEND_BACK;
+		}			
 		remove_LSA_list(old_LSA);
 	} 
 	
@@ -46,6 +48,7 @@ int insert_LSA_list(LSA* new_package){
 	lsa_footer->prev->next = new_LSA;
 	lsa_footer->prev = new_LSA;
 
+	LSA_to_send = new_LSA;
 	return CONTINUE_FLOODING;		
 }
 
