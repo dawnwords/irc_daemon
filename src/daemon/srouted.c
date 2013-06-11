@@ -58,7 +58,8 @@ int main( int argc, char *argv[] ) {
         
         //IT_IS_TIME_TO_ADVERTISEMENT
         if( is_time_to_advertise(&last_time) ){
-            //advertise_all_routes_to_all_neighbors();         //check_for_down_neighbors();
+            //advertise_all_routes_to_all_neighbors();
+            //check_for_down_neighbors();
             //expire_old_routes();
             //delete_very_old_routes();  
         }
@@ -84,6 +85,15 @@ int main( int argc, char *argv[] ) {
                 if(Rio_readlineb(&rio,buf,MAXLINE) > 0){
                     get_msg(buf,buf);
                     handle_command(buf,rio.rio_fd);
+                    while( rio.rio_cnt > 0 ){
+                        Rio_readlineb(&rio,buf,MAXLINE);
+                        get_msg(buf,buf);
+                        handle_command(buf,rio.rio_fd);
+                    }
+                }else{/* EOF detected.*/
+                    close(send_to_server_fd);
+                    FD_CLR(send_to_server_fd, &read_set);
+                    is_connect_server = 0;
                 }
             }
             //LSA from daemon INCOMMING_ADVERTISEMENT
