@@ -42,8 +42,8 @@ int main( int argc, char *argv[] ) {
     struct sockaddr_in clientaddr;
     socklen_t clientlen = sizeof(struct sockaddr_in);
     time_t last_time;
-    rio_t rio;
-    char buf[MAXLINE];
+    rio_t rio;              //rio buffer to store data from server
+    char buf[MAXLINE];      //current command line
 
 
     rt_init(argc, argv);  //must call at beginning
