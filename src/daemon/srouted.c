@@ -62,14 +62,20 @@ int main( int argc, char *argv[] ) {
     /* initialize lsa list */
     init_LSA_list();
 
+    //broadcast to all its neighbor to tell them you are online
+    broadcast_neightbor(udp_fd,&self_lsa,NULL);
+
     FD_ZERO(&read_set);
     maxfd = listen_server_fd > udp_fd ? listen_server_fd:udp_fd;
     while (1) {
         
-        //IT_IS_TIME_TO_ADVERTISEMENT
+        //advertise_cycle_time is up
         if( is_time_to_advertise(&last_time) ){
             broadcast_neightbor(udp_fd,&self_lsa,NULL);  
         }
+
+        //lsa_timeout & neighbor_timeout is up
+        remove_expired_lsa_and_neighbor();
 
         FD_SET(listen_server_fd,&read_set);
         FD_SET(udp_fd,&read_set);
@@ -112,6 +118,22 @@ int main( int argc, char *argv[] ) {
     }
 
     return 0;
+}
+
+void remove_expired_lsa_and_neighbor(){
+    time_t cur_time;
+    LSA_list *cur_lsa_p = lsa_header;
+    u_long lsa_timeout = args.lsa_timeout;
+    u_long neighbor_timeout = args.neighbor_timeout;
+    while(cur_lsa_p != lsa_footer){
+        cur_lsa_p = cur_lsa_p->next;
+        ctime(&cur_time);
+        if(cur_time - cur_lsa_p->receive_time >= lsa_timeout ){
+            remove_LSA_list(cur_lsa_p);
+                        
+        }
+    }
+    
 }
 
 void broadcast_neightbor( int udp_sock, LSA *package_to_broadcast, struct sockaddr_in *except_addr){
