@@ -187,44 +187,52 @@ void process_incoming_lsa(int udp_fd){
     struct sockaddr_in cli_addr;
     socklen_t clilen = sizeof(cli_addr);
 
+    /* receive a udp package from other daemon */
     rt_recvfrom(udp_fd, package_in,sizeof(LSA), 0, (struct sockaddr *)&cli_addr, (socklen_t *)&clilen);
     
+    /* if the package is an ack */
+    if(package_in->type){
+        remove_from_wait_ack_list(package_in, &cli_addr);
+        return;
+    }
+
+    /* send ack back */
+    LSA ack;
+    ack.type = 1;
+    ack.sender_id = package_in->sender_id;
+    ack.seq_num = package_in->seq_num;
+    send_to(udp_fd,&ack, &cli_addr);
+
+    /* 
+     * TTL = 0 and sender is not self, 
+     * delete corresponding LSA and broadcast this package to neighbor 
+     */
+    if(package_in->ttl == 0 && package_in->sender_id != curr_nodeID){
+        delete_lsa_by_sender(package_in->sender_id);
+        package_in->ttl++;
+        broadcast_neightbor(udp_fd, package_in, &cli_addr);
+        return;
+    }
+
+    /* 
+     * receiving a package sent by self only happens when recovering from down 
+     * we need to replace self-LSA with the package received
+     */
+    if(package_in->sender_id == curr_nodeID){
+        package_in->ttl = 32;
+        memcpy(&self_lsa,package_in,sizeof(LSA));
+    }
+
+    /* insert package_in */
     LSA_list* LSA_to_send = NULL;
     switch(insert_LSA_list(package_in,LSA_to_send)){
-        case CONTINUE_FLOODING:{   
-            int i;
-            rt_config_entry_t config_entry;
-            struct sockaddr_in target_addr;
-            unsigned short target_port;
-            unsigned long target_ip;
-
-            for (i = 0; i < curr_node_config_file.size; i++){
-                config_entry = curr_node_config_file.entries[i];
-                // ignore self
-                if(config_entry.nodeID == curr_nodeID)
-                    continue;
-
-                target_port = htons(config_entry.routing_port);
-                target_ip = htonl(config_entry.ipaddr);
-
-                // ignore sender
-                if(target_ip == cli_addr.sin_addr.s_addr && 
-                    target_port == cli_addr.sin_port)                    
-                    continue;
-
-                memset(&target_addr, '\0', sizeof(target_addr));
-                target_addr.sin_family = AF_INET;
-                target_addr.sin_addr.s_addr = target_ip;
-                target_addr.sin_port = target_port;
-                rt_sendto(udp_fd,LSA_to_send,sizeof(LSA),0,(struct sockaddr *)&cli_addr, clilen);
-            }
-        }
+        case CONTINUE_FLOODING:
+            broadcast_neightbor(udp_fd,LSA_to_send->package, &cli_addr);            
             break;
         case DISCARD:
             break;
         case SEND_BACK:
-            // send the LSA with higher seq_num back to the daemon connected
-            rt_sendto(udp_fd,LSA_to_send,sizeof(LSA),0,(struct sockaddr *)&cli_addr, clilen);
+            send_to(udp_fd,LSA_to_send->package, &cli_addr);
             break;
     }   
 }
