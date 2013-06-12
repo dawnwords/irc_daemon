@@ -61,5 +61,5 @@ void remove_LSA_list(LSA_list* LSA_entry){
 void delete_lsa_by_sender(unsigned long sender_id){
 	LSA_list* LSA = find_LSA_list(sender_id);
 	if(LSA)
-		remove_LSA_list(LSA);s
+		remove_LSA_list(LSA);
 }
