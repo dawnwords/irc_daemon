@@ -40,6 +40,7 @@ void handle_NEXTHOP(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int 
 void handle_NEXTHOPS(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num);
 
 void handle_command(char *msg, int connfd);
-
+void broadcast_neightbor(LSA *package_to_broadcast, struct sockaddr_in *except_addr);
+void get_addr_by_nodeID(int nodeID, struct sockaddr_in *target_addr)
 int is_time_to_advertise(time_t *last_time);
 #endif /*__SROUTED_H__*/

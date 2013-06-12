@@ -21,3 +21,7 @@ int init_udp_server_socket(int port){
 
     return listenfd;
 }
+
+void send_to(LSA *package_to_send,struct sockaddr_in *target_addrp){
+    package_to_send->
+}
