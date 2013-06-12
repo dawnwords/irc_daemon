@@ -44,4 +44,5 @@ void handle_command(char *msg, int connfd);
 void broadcast_neightbor(int sock_fd, LSA *package_to_broadcast, struct sockaddr_in *except_addr);
 int get_addr_by_nodeID(int nodeID, struct sockaddr_in *target_addr);
 int is_time_to_advertise(time_t *last_time);
+int process_server_cmd(rio_t* rio);
 #endif /*__SROUTED_H__*/

@@ -38,20 +38,20 @@ void (*handler[])(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int to
 /* Main */
 int main( int argc, char *argv[] ) {
     int listen_server_fd, udp_fd, nready,maxfd;
-    int send_to_server_fd = -1;
     fd_set read_set;
-    int is_connect_server = 0;  //whether has connected to server
     struct timeval timeout;
     struct sockaddr_in clientaddr;
     socklen_t clientlen = sizeof(struct sockaddr_in);
     time_t last_time;
     rio_t rio;              //rio buffer to store data from server
-    char buf[MAXLINE];      //current command line
 
     //init variable
     timeout.tv_sec = 0;
     timeout.tv_usec = 0;
     ctime(&last_time);
+
+    // init rio
+    rio.rio_fd = 0;
 
     rt_init(argc, argv);  //must call at beginning
     init_daemon( argc, argv ); // parse command line and fill global variable
@@ -73,8 +73,8 @@ int main( int argc, char *argv[] ) {
 
         FD_SET(listen_server_fd,&read_set);
         FD_SET(udp_fd,&read_set);
-        if(is_connect_server){
-            FD_SET(send_to_server_fd,&read_set);
+        if(rio.rio_fd){
+            FD_SET(rio.rio_fd,&read_set);
         }
 
         if( (nready = Select(maxfd+1, &read_set, NULL, NULL, &timeout)) < 0){
@@ -82,25 +82,15 @@ int main( int argc, char *argv[] ) {
         }else if(nready > 0){
             //listen_server_fd selected, server ask for a tcp socket connection
             if( FD_ISSET(listen_server_fd,&read_set) ){
-                send_to_server_fd = Accept(listen_server_fd, (SA *)&clientaddr, &clientlen);
-                Rio_readinitb(&rio,send_to_server_fd);
-                is_connect_server = 1;
-                maxfd = maxfd > send_to_server_fd ? maxfd : send_to_server_fd;
+                Rio_readinitb(&rio,Accept(listen_server_fd, (SA *)&clientaddr, &clientlen));
+                maxfd = maxfd > rio.rio_fd ? maxfd : rio.rio_fd;
             }
             //new command from server INCOMMING_SERVER_CMD
-            if(is_connect_server && FD_ISSET(send_to_server_fd,&read_set)){
-                if(Rio_readlineb(&rio,buf,MAXLINE) > 0){
-                    get_msg(buf,buf);
-                    handle_command(buf,rio.rio_fd);
-                    while( rio.rio_cnt > 0 ){
-                        Rio_readlineb(&rio,buf,MAXLINE);
-                        get_msg(buf,buf);
-                        handle_command(buf,rio.rio_fd);
-                    }
-                }else{/* EOF detected.*/
-                    close(send_to_server_fd);
-                    FD_CLR(send_to_server_fd, &read_set);
-                    is_connect_server = 0;
+            if(rio.rio_fd && FD_ISSET(rio.rio_fd,&read_set)){
+                if(process_server_cmd(&rio)){
+                    /* Server EOF */
+                    FD_CLR(rio.rio_fd, &read_set);
+                    rio.rio_fd = 0;
                 }
             }
             //LSA from daemon INCOMMING_ADVERTISEMENT
@@ -213,6 +203,25 @@ void process_incoming_lsa(int udp_fd){
             send_to(udp_fd,LSA_to_send->package, &cli_addr);
             break;
     }   
+}
+
+int process_server_cmd(rio_t* rio){
+    char buf[MAXLINE];      //current command line
+
+    if(Rio_readlineb(rio,buf,MAXLINE) > 0){
+        get_msg(buf,buf);
+        handle_command(buf,rio->rio_fd);
+        while( rio->rio_cnt > 0 ){
+            Rio_readlineb(rio,buf,MAXLINE);
+            get_msg(buf,buf);
+            handle_command(buf,rio->rio_fd);
+        }
+        return 0;
+    }else{
+        /* EOF detected.*/     
+        close(rio->rio_fd);
+        return 1;
+    }
 }
 
 int is_time_to_advertise(time_t *last_time){
