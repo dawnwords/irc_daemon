@@ -4,8 +4,9 @@
 #include "../common/csapp.h"
 #include "../common/util.h"
 #include "rtgrading.h"
+#include "../common/rtlib.h"
 
-#define MAX_LINK_ENTRIES 32
+#define MAX_LINK_ENTRIES MAX_CONFIG_FILE_LINES
 
 typedef struct LSA_t {
 	char version;
