@@ -11,21 +11,17 @@
 #include "lsa_list.h"
 #include "wait_ack_list.h"
 
-
-#define INCOMING_ADVERTISEMENT 			1
-#define IT_IS_TIME_TO_ADVERTISE_ROUTES  2
-#define INCOMMING_SERVER_CMD			3
-
 typedef struct user_struct{
-	char name[MAX_NAME_LENGTH];
-	int source_node;
-	int next_hoop;
+	char name[MAX_NAME_LENGTH];	
+	u_long next_hop;
+	int distance;
 } user_routing_entry;
 
 typedef struct channel_struct{
 	char name[MAX_NAME_LENGTH];
-	int next_hoop;
-	int distance;
+	u_long source_node;
+	int hop_num;
+	u_long next_hops[MAX_LINK_ENTRIES];
 } channel_routing_entry;
 
 void init_self_lsa(int node_id);
