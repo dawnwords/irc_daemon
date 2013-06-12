@@ -42,14 +42,17 @@ int main( int argc, char *argv[] ) {
     fd_set read_set;
     int is_connect_server = 0;  //whether has connected to server
     struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
     struct sockaddr_in clientaddr;
     socklen_t clientlen = sizeof(struct sockaddr_in);
     time_t last_time;
     rio_t rio;              //rio buffer to store data from server
     char buf[MAXLINE];      //current command line
+l
 
+    //init variable
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
+    ctime(&last_time);
 
     rt_init(argc, argv);  //must call at beginning
     init_daemon( argc, argv ); // parse command line and fill global variable
@@ -217,9 +220,7 @@ void handle_command(char *msg, int connfd){
 }
 
 void handle_ADDUSER(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
-    
     strncpy(self_lsa.user_entries[self_lsa.num_user_entries++],tokens[1],MAX_NAME_LENGTH);
-    
     reply(connfd,"OK");
 }
 
@@ -243,7 +244,6 @@ void handle_ADDCHAN(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int 
 }
 
 void handle_REMOVECHAN(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
-
     reply(connfd,"OK");
 }
 
@@ -262,4 +262,5 @@ void handle_NEXTHOP(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int 
 void handle_NEXTHOPS(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
     reply(connfd,"OK");   
 }
+
 
