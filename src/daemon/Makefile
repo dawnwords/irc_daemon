@@ -11,7 +11,7 @@ LIBS	= -pthread
 COM     = ../common/
 
 
-OBJECTS	= srouted.o rtlib.o csapp.o util.o socket.o udp.o rtgrading.o lsa_list.o
+OBJECTS	= srouted.o rtlib.o csapp.o util.o socket.o udp.o rtgrading.o lsa_list.o wait_ack_list.o
 
 all:	$(TARGET)
 
@@ -40,6 +40,9 @@ udp.o: udp.c udp.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 lsa_list.o: lsa_list.c lsa_list.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+wait_ack_list.o: wait_ack_list.c wait_ack_list.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 %.o: %.c
