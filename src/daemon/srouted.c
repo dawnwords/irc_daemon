@@ -68,7 +68,7 @@ int main( int argc, char *argv[] ) {
         
         //IT_IS_TIME_TO_ADVERTISEMENT
         if( is_time_to_advertise(&last_time) ){
-            broadcast_neightbor(self_lsa,NULL);  
+            broadcast_neightbor(udp_fd,&self_lsa,NULL);  
         }
 
         FD_SET(listen_server_fd,&read_set);
@@ -114,14 +114,14 @@ int main( int argc, char *argv[] ) {
     return 0;
 }
 
-void broadcast_neightbor(LSA *package_to_broadcast, struct sockaddr_in *except_addr){
+void broadcast_neightbor( int udp_sock, LSA *package_to_broadcast, struct sockaddr_in *except_addr){
     int i;
-    sockaddr_in target_addr;
+    struct sockaddr_in target_addr;
     int result;
     for(i = 0; i < self_lsa.num_link_entries; i++){
         result = get_addr_by_nodeID(self_lsa.link_entries[i],&target_addr);
-        if(result && !except_addr && equal_addr(&target_addr,&except_addr)){
-            send_to(package_to_broadcast,&target_addr);
+        if(result && !except_addr && equal_addr(&target_addr,except_addr)){
+            send_to(udp_sock, package_to_broadcast,&target_addr);
         }
     }
 }
