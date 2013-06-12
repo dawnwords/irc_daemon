@@ -47,7 +47,6 @@ int main( int argc, char *argv[] ) {
     time_t last_time;
     rio_t rio;              //rio buffer to store data from server
     char buf[MAXLINE];      //current command line
-l
 
     //init variable
     timeout.tv_sec = 0;
