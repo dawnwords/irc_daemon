@@ -9,10 +9,10 @@ void init_wait_ack_list(){
     wait_footer->prev = wait_footer;   
 }
 
-void add_to_wait_ack_list(LSA* package,struct sockaddr_in target_addr){
+void add_to_wait_ack_list(LSA* package,struct sockaddr_in *target_addr){
 	wait_ack_list* new_wait_ack = (wait_ack_list*) Calloc(1,sizeof(wait_ack_list));
 	ctime(&new_wait_ack->last_send);
-	memcpy(&new_wait_ack->target_addr,&target_addr,sizeof(struct sockaddr_in));
+	memcpy(&new_wait_ack->target_addr,target_addr,sizeof(struct sockaddr_in));
 	memcpy(&new_wait_ack->package,package,sizeof(LSA));	
 
 	new_wait_ack->prev = wait_footer->prev;
@@ -27,12 +27,12 @@ void remove_one_frome_wait_ack_list(wait_ack_list* wait_ack_node){
 	Free(wait_ack_node);
 }
 
-void remove_from_wait_ack_list(LSA* package,struct sockaddr_in target_addr){
+void remove_from_wait_ack_list(LSA* package,struct sockaddr_in *target_addr){
 	wait_ack_list* temp;
 	for (temp = wait_header; temp != wait_footer; temp = temp->next) {
 		if(package->sender_id == temp->package.sender_id &&
 			package->seq_num <= temp->package.seq_num &&
-			equal_addr(&target_addr,&temp->target_addr))
+			equal_addr(target_addr,&temp->target_addr))
 			remove_one_frome_wait_ack_list(temp);
 	}
 }
