@@ -26,7 +26,7 @@ class RDAEMON
                 if s == @rdaemon then
                     next if @rdaemon.eof
                     s = @rdaemon.gets
-					puts s
+										puts s
                     received_data[k] = s
                     k= k + 1
                 end

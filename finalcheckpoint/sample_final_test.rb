@@ -229,20 +229,6 @@ sleep(2)
 	eval_test(tn, nil, nil, irc5.checkmsg("dwen", "#15441", "dump trucks run the Internet"))
 	eval_test(tn, nil, nil, irc6.checkmsg("dwen", "#15441", "dump trucks run the Internet"))
 	
-	tn = test_name("gnychis --PRIVMSG--> #15441")
-	irc6.send_privmsg("#15441", "totally, I see them every day walking to school")
-	eval_test(tn, nil, nil, irc1.checkmsg("gnychis", "#15441", "totally, I see them every day walking to school"))
-	eval_test(tn, nil, nil, irc4.checkmsg("gnychis", "#15441", "totally, I see them every day walking to school"))
-	eval_test(tn, nil, nil, irc5.checkmsg("gnychis", "#15441", "totally, I see them every day walking to school"))
-	eval_test(tn, nil, nil, irc3.checkmsg("gnychis", "#15441", "totally, I see them every day walking to school"))
-	
-	tn = test_name("vyass --PRIVMSG--> #15441")
-	irc5.send_privmsg("#15441", "I drive one of them")
-	eval_test(tn, nil, nil, irc1.checkmsg("vyass", "#15441", "I drive one of them"))
-	eval_test(tn, nil, nil, irc4.checkmsg("vyass", "#15441", "I drive one of them"))
-	eval_test(tn, nil, nil, irc6.checkmsg("vyass", "#15441", "I drive one of them"))
-	eval_test(tn, nil, nil, irc3.checkmsg("vyass", "#15441", "I drive one of them"))
-	
 	# Test the ability to join another channel which should part the current channel
 	irc1.join_chan("#private")
 	irc1.ignore_reply()
@@ -265,18 +251,6 @@ sleep(2)
 	eval_test(tn, nil, nil, irc3.test_silence(1))
 	tn = test_name("vyass silence")
 	eval_test(tn, nil, nil, irc5.test_silence(1))
-	
-	# Send another message in #15441 and make sure dga and srini don't hear it
-	tn = test_name("gnychis --PRIVMSG--> #15441")
-	irc6.send_privmsg("#15441", "I think we scared them away")
-	eval_test(tn, nil, nil, irc5.checkmsg("gnychis", "#15441", "I think we scared them away"))
-	eval_test(tn, nil, nil, irc3.checkmsg("gnychis", "#15441", "I think we scared them away"))
-
-	# test the silence
-	tn = test_name("dga silence")
-	eval_test(tn, nil, nil, irc1.test_silence(1))
-	tn = test_name("srini silence")
-	eval_test(tn, nil, nil, irc4.test_silence(1))
 
 rescue Interrupt
 rescue Exception => detail
