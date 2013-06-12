@@ -15,14 +15,17 @@
 #define IT_IS_TIME_TO_ADVERTISE_ROUTES  2
 #define INCOMMING_SERVER_CMD			3
 
-typedef struct input_param{
-	int listen_server_fd;
-	int udp_fd;
-} input_param_t;
+typedef struct user_struct{
+	char name[MAX_NAME_LENGTH];
+	int source_node;
+	int next_hoop;
+} user_routing_entry;
 
-typedef union param{
-	input_param_t input; /*input parameter*/
-} param_t;
+typedef struct channel_struct{
+	char name[MAX_NAME_LENGTH];
+	int next_hoop;
+	int distance;
+} channel_routing_entry;
 
 void init_self_lsa(int node_id);
 void process_incoming_lsa(int udp_fd);
@@ -33,6 +36,8 @@ void handle_ADDCHAN(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int 
 void handle_REMOVECHAN(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num);
 void handle_USERTABLE(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num);
 void handle_CHANTABLE(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num);
+void handle_NEXTHOP(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num);
+void handle_NEXTHOPS(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num);
 
 void handle_command(char *msg, int connfd);
 

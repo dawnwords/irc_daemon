@@ -8,7 +8,8 @@ extern rt_args_t args;
 extern LSA_list *lsa_header, *lsa_footer;
 
 LSA self_lsa;
-
+user_routing_entry user_routing_table[FD_SETSIZE];
+channel_routing_entry channel_routing_table[FD_SETSIZE];
 
 char *command[] = {
     "ADDUSER",
@@ -16,7 +17,9 @@ char *command[] = {
     "ADDCHAN",
     "REMOVECHAN",
     "USERTABLE",
-    "CHANTABLE"
+    "CHANTABLE",
+    "NEXTHOP",
+    "NEXTHOPS"
 };
 
 #define N_CMD (sizeof(command)/sizeof(command[0]))  
@@ -27,7 +30,9 @@ void (*handler[])(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int to
     handle_ADDCHAN,
     &handle_REMOVECHAN,
     &handle_USERTABLE,
-    &handle_CHANTABLE
+    &handle_CHANTABLE,
+    &handle_NEXTHOP,
+    &handle_NEXTHOPS
 };
 
 /* Main */
@@ -153,15 +158,15 @@ void process_incoming_lsa(int udp_fd){
 
                 // ignore sender
                 if(target_ip == cli_addr.sin_addr.s_addr && 
-                    target_port == cli_addr.sin_port)
-                    continue;                
+                    target_port == cli_addr.sin_port)                    
+                    continue;
 
                 memset(&target_addr, '\0', sizeof(target_addr));
                 target_addr.sin_family = AF_INET;
                 target_addr.sin_addr.s_addr = target_ip;
                 target_addr.sin_port = target_port;
                 rt_sendto(udp_fd,LSA_to_send,sizeof(LSA),0,(struct sockaddr *)&cli_addr, clilen);
-            }            
+            }
         }
             break;
         case DISCARD:
@@ -184,7 +189,7 @@ int is_time_to_advertise(time_t *last_time){
     return 0;
 }
 
-void reply_ok(int connfd, char const * const message){
+void reply(int connfd, char const * const message){
     char reply[MAX_MSG_LEN];
     sprintf(reply, "%s\n", message);
     Rio_writen(connfd,reply, strlen(reply));
@@ -212,30 +217,49 @@ void handle_command(char *msg, int connfd){
 }
 
 void handle_ADDUSER(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
-    // event = IT_IS_TIME_TO_ADVERTISE_ROUTES;
-    reply_ok(connfd,"OK");
+    
+    strncpy(self_lsa.user_entries[self_lsa.num_user_entries++],tokens[1],MAX_NAME_LENGTH);
+    
+    reply(connfd,"OK");
 }
 
 void handle_REMOVEUSER(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
-    // event = IT_IS_TIME_TO_ADVERTISE_ROUTES;
-    reply_ok(connfd,"OK");
+    int i;
+
+    for(i = 0;i<self_lsa.num_user_entries;i++){
+        if(!strcmp(self_lsa.user_entries[i],tokens[1])){
+            strncpy(self_lsa.user_entries[i],
+                self_lsa.user_entries[--self_lsa.num_user_entries],
+                MAX_NAME_LENGTH);
+            break;
+        }
+    }
+
+    reply(connfd,"OK");
 }
 
 void handle_ADDCHAN(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
-    // event = IT_IS_TIME_TO_ADVERTISE_ROUTES;
-    reply_ok(connfd,"OK");
+    reply(connfd,"OK");
 }
 
 void handle_REMOVECHAN(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
-    // event = IT_IS_TIME_TO_ADVERTISE_ROUTES;
-    reply_ok(connfd,"OK");
+
+    reply(connfd,"OK");
 }
 
 void handle_USERTABLE(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
-    reply_ok(connfd,"OK 0");
+    reply(connfd,"OK 0");
 }
 
 void handle_CHANTABLE(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
-    reply_ok(connfd,"OK 0");
+    reply(connfd,"OK 0");
+}
+
+void handle_NEXTHOP(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
+    reply(connfd,"OK");
+}
+
+void handle_NEXTHOPS(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
+    reply(connfd,"OK");   
 }
 
