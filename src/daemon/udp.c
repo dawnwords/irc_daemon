@@ -21,3 +21,10 @@ int init_udp_server_socket(int port){
 
     return listenfd;
 }
+
+void send_to(int udp_sock, LSA *package_to_send,struct sockaddr_in *target_addrp){
+    package_to_send->ttl--;
+    rt_sendto(udp_sock, package_to_send, sizeof(LSA), 0, (SA *)target_addrp, sizeof(struct sockaddr_in));
+    add_to_wait_ack_list(package_to_send, target_addrp);
+    package_to_send->ttl++;
+}

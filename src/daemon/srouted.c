@@ -5,7 +5,7 @@ extern u_long curr_nodeID;
 extern rt_config_file_t   curr_node_config_file;  /* The config_file  for this node */
 extern rt_config_entry_t *curr_node_config_entry; /* The config_entry for this node */
 extern rt_args_t args;
-extern LSA_list *lsa_header, *lsa_footer;
+extern LSA_list *lsa_header, *lsa_footer;  //header and foot of LAS list not waiting header & footer of waiting_ack_list
 
 LSA self_lsa;
 user_routing_entry user_routing_table[FD_SETSIZE];
@@ -27,7 +27,7 @@ char *command[] = {
 void (*handler[])(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num) = {
     &handle_ADDUSER,
     &handle_REMOVEUSER,
-    handle_ADDCHAN,
+    &handle_ADDCHAN,
     &handle_REMOVECHAN,
     &handle_USERTABLE,
     &handle_CHANTABLE,
@@ -68,10 +68,7 @@ int main( int argc, char *argv[] ) {
         
         //IT_IS_TIME_TO_ADVERTISEMENT
         if( is_time_to_advertise(&last_time) ){
-            //advertise_all_routes_to_all_neighbors();
-            //check_for_down_neighbors();
-            //expire_old_routes();
-            //delete_very_old_routes();  
+            broadcast_neightbor(udp_fd,&self_lsa,NULL);  
         }
 
         FD_SET(listen_server_fd,&read_set);
@@ -116,6 +113,36 @@ int main( int argc, char *argv[] ) {
 
     return 0;
 }
+
+void broadcast_neightbor( int udp_sock, LSA *package_to_broadcast, struct sockaddr_in *except_addr){
+    int i;
+    struct sockaddr_in target_addr;
+    int result;
+    for(i = 0; i < self_lsa.num_link_entries; i++){
+        result = get_addr_by_nodeID(self_lsa.link_entries[i],&target_addr);
+        if(result && !except_addr && equal_addr(&target_addr,except_addr)){
+            send_to(udp_sock, package_to_broadcast,&target_addr);
+        }
+    }
+}
+
+int get_addr_by_nodeID(int nodeID, struct sockaddr_in *target_addr){
+    int i;
+    int size = curr_node_config_file.size;
+    rt_config_entry_t temp;
+    for (i = 0; i < size; i++){
+        temp = curr_node_config_file.entries[i];
+        if(nodeID == temp.nodeID){
+            bzero(target_addr, sizeof(struct sockaddr_in));
+            target_addr->sin_family = AF_INET;
+            target_addr->sin_port = temp.routing_port;
+            target_addr->sin_addr.s_addr = temp.ipaddr;
+            return 1;
+        }
+    }
+    return 0;
+}
+
 
 void init_self_lsa(int node_id){
     self_lsa.version = 1;

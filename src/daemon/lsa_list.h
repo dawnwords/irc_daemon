@@ -2,11 +2,31 @@
 #define __LSA_LIST_H__
 
 #include "../common/csapp.h"
-#include "udp.h"
+#include "../common/rtlib.h"
+#include "../common/util.h"
 
 #define CONTINUE_FLOODING 	1
 #define DISCARD				0
 #define SEND_BACK			-1
+
+#define MAX_LINK_ENTRIES MAX_CONFIG_FILE_LINES
+
+typedef struct LSA_t {
+	char version;
+	char ttl;
+	short type;
+
+	unsigned long sender_id;
+	int seq_num;
+
+	int num_link_entries;
+	int num_user_entries;
+	int num_channel_entries;
+
+	unsigned long link_entries[MAX_LINK_ENTRIES];
+	char user_entries[FD_SETSIZE][MAX_NAME_LENGTH];
+	char channel_entries[FD_SETSIZE][MAX_NAME_LENGTH];
+} LSA;
 
 typedef struct LSA_list_struct{
 	time_t receive_time;
