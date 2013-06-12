@@ -6,6 +6,7 @@ extern rt_config_file_t   curr_node_config_file;  /* The config_file  for this n
 extern rt_config_entry_t *curr_node_config_entry; /* The config_entry for this node */
 extern rt_args_t args;
 extern LSA_list *lsa_header, *lsa_footer;  //header and foot of LAS list not waiting header & footer of waiting_ack_list
+extern wait_ack_list *wait_header, *wait_footer;
 
 LSA self_lsa;
 user_routing_entry user_routing_table[FD_SETSIZE];
@@ -44,7 +45,7 @@ int main( int argc, char *argv[] ) {
     struct timeval timeout;
     struct sockaddr_in clientaddr;
     socklen_t clientlen = sizeof(struct sockaddr_in);
-    time_t last_time;
+    time_t last_time = 0L;
     rio_t rio;              //rio buffer to store data from server
     char buf[MAXLINE];      //current command line
 
@@ -61,21 +62,23 @@ int main( int argc, char *argv[] ) {
 
     /* initialize lsa list */
     init_LSA_list();
+    init_wait_ack_list();
 
-    //broadcast to all its neighbor to tell them you are online
-    broadcast_neightbor(udp_fd,&self_lsa,NULL);
 
     FD_ZERO(&read_set);
     maxfd = listen_server_fd > udp_fd ? listen_server_fd:udp_fd;
     while (1) {
         
-        //advertise_cycle_time is up
+        //advertise_cycle_time is up?
         if( is_time_to_advertise(&last_time) ){
             broadcast_neightbor(udp_fd,&self_lsa,NULL);  
         }
 
-        //lsa_timeout & neighbor_timeout is up
-        remove_expired_lsa_and_neighbor();
+        //lsa_timeout & neighbor_timeout is up?
+        remove_expired_lsa_and_neighbor(udp_fd);
+
+        //retransmission_timeout is up?
+        retransmit_ack(udp_fd);
 
         FD_SET(listen_server_fd,&read_set);
         FD_SET(udp_fd,&read_set);
@@ -120,20 +123,52 @@ int main( int argc, char *argv[] ) {
     return 0;
 }
 
-void remove_expired_lsa_and_neighbor(){
+void remove_expired_lsa_and_neighbor(int udp_fd){
     time_t cur_time;
-    LSA_list *cur_lsa_p = lsa_header;
+    LSA_list *cur_lsa_p;
     u_long lsa_timeout = args.lsa_timeout;
     u_long neighbor_timeout = args.neighbor_timeout;
-    while(cur_lsa_p != lsa_footer){
-        cur_lsa_p = cur_lsa_p->next;
-        ctime(&cur_time);
-        if(cur_time - cur_lsa_p->receive_time >= lsa_timeout ){
-            remove_LSA_list(cur_lsa_p);
-                        
+    long elapsed_time;
+
+    ctime(&cur_time);
+
+    for(cur_lsa_p = lsa_header->next; cur_lsa_p != lsa_footer; cur_lsa_p = cur_lsa_p->next){
+        elapsed_time = cur_time - cur_lsa_p->receive_time;
+        if( elapsed_time >= lsa_timeout ){
+            remove_LSA_list(cur_lsa_p);      
+        }
+        if( elapsed_time >= neighbor_timeout && is_neighbor(cur_lsa_p->package->sender_id) ){
+            cur_lsa_p->package->ttl = 1;
+            broadcast_neightbor(udp_fd, cur_lsa_p->package,NULL);
         }
     }
     
+}
+
+int is_neighbor( u_long nodeID ){
+    int i;
+    int num_link_entries = self_lsa.num_link_entries;
+    for( i = 0; i < num_link_entries; i++){
+        if( nodeID == self_lsa.link_entries[i]){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void retransmit_ack(int udp_fd){
+    time_t cur_time;
+    wait_ack_list *cur_lsa_p;
+    u_long retransmission_timeout = args.retransmission_timeout;
+    long elapsed_time;
+    ctime(&cur_time);
+    for(cur_lsa_p = wait_header->next; cur_lsa_p != wait_header; cur_lsa_p = cur_lsa_p->next ){
+        elapsed_time = cur_time - cur_lsa_p->last_send;
+        if(elapsed_time >= retransmission_timeout){
+            rt_sendto(udp_fd, &cur_lsa_p->package, sizeof(LSA), 0, (SA *)&cur_lsa_p->target_addr, sizeof(struct sockaddr_in));
+            ctime(&cur_lsa_p->last_send);
+        }
+    }
 }
 
 void broadcast_neightbor( int udp_sock, LSA *package_to_broadcast, struct sockaddr_in *except_addr){
