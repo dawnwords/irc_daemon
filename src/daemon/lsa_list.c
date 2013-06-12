@@ -19,7 +19,7 @@ void free_LSA_list(LSA_list* LSA_entry){
 
 LSA_list* find_LSA_list(unsigned long sender_id){
     LSA_list* temp;
-    for(temp = lsa_header; temp != lsa_footer; temp = temp->next)
+    for(temp = lsa_header->next; temp != lsa_footer; temp = temp->next)
         if(temp->package->sender_id == sender_id)
             return temp;
     return NULL;

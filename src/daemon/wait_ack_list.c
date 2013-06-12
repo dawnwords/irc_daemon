@@ -29,7 +29,7 @@ void remove_one_frome_wait_ack_list(wait_ack_list* wait_ack_node){
 
 void remove_from_wait_ack_list(LSA* package,struct sockaddr_in *target_addr){
 	wait_ack_list* temp;
-	for (temp = wait_header; temp != wait_footer; temp = temp->next) {
+	for (temp = wait_header->next; temp != wait_footer; temp = temp->next) {
 		if(package->sender_id == temp->package.sender_id &&
 			package->seq_num <= temp->package.seq_num &&
 			equal_addr(target_addr,&temp->target_addr))
