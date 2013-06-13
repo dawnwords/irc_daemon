@@ -32,9 +32,12 @@ routing_table *insert_before_routing_table(u_long dst_id,int length,u_long path[
 }
 
 void delete_routing_table(routing_table *element){
-	element->prev->next = element->next;
-	element->next->prev = element->prev;
-	Free(element);
+	if(element){
+		element->prev->next = element->next;
+		element->next->prev = element->prev;
+		Free(element);	
+	}
+	
 }
 
 void discard_tree(){

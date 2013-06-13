@@ -25,7 +25,7 @@ typedef struct channel_struct{
 	u_long next_hops[MAX_LINK_ENTRIES];
 } channel_routing_entry;
 
-void init_self_lsa(int node_id);
+void init_self_lsa();
 void process_incoming_lsa(int udp_fd);
 
 void handle_ADDUSER(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num);
@@ -41,7 +41,7 @@ void handle_command(char *msg, int connfd, int udp_fd);
 void retransmit_ack(int udp_fd);
 int is_neighbor( u_long nodeID );
 void remove_expired_lsa_and_neighbor(int udp_fd);
-void broadcast_neightbor(int sock_fd, LSA *package_to_broadcast, struct sockaddr_in *except_addr);
+void broadcast_neighbor(int sock_fd, LSA *package_to_broadcast, struct sockaddr_in *except_addr);
 int get_addr_by_nodeID(int nodeID, struct sockaddr_in *target_addr);
 int is_time_to_advertise(time_t *last_time);
 int process_server_cmd(rio_t* rio, int udp_fd);

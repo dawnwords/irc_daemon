@@ -11,8 +11,10 @@ void init_LSA_list(){
 
 void free_LSA_list(LSA_list* LSA_entry){
     if(LSA_entry){
-        if(LSA_entry->package)
+        if(LSA_entry->package){	
             Free(LSA_entry->package);
+        }
+        
         Free(LSA_entry);
     }
 }
@@ -27,15 +29,15 @@ LSA_list* find_LSA_list(unsigned long sender_id){
 
 int insert_LSA_list(LSA* new_package,LSA_list* LSA_to_send){
 	LSA_list* lsa = find_LSA_list(new_package->sender_id);
-	int flag = new_package->seq_num - lsa->package->seq_num;
-
+	int flag;
 	if(lsa){
+		flag = new_package->seq_num - lsa->package->seq_num;
 		if(flag == 0)
 			return DISCARD;
 		if(flag < 0){
 			LSA_to_send = lsa;
 			return SEND_BACK;
-		}		
+		}	
 	}else{
 		lsa = (LSA_list*) Calloc(1,sizeof(LSA_list));
 		discard_tree();
@@ -49,6 +51,7 @@ int insert_LSA_list(LSA* new_package,LSA_list* LSA_to_send){
 	lsa_footer->prev = lsa;
 
 	LSA_to_send = lsa;
+
 	return CONTINUE_FLOODING;		
 }
 

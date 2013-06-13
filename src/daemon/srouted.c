@@ -42,22 +42,19 @@ void (*handler[])(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LE
 void print_package_as_string(LSA *package){
     char buf[MAX_MSG_LEN];
     int length = 0;
-    length += snprintf(buf + length, MAX_MSG_LEN - length, "{ ttl:%d, type:%s, sender_id:%lu, seq_num:%d, link_entries[ ",package->ttl, package->type ? "ACK":"LSA", package->sender_id, package->seq_num);
+    length += snprintf(buf + length, MAX_MSG_LEN - length, "{ ttl:%d, type:%s, sender_id:%lu, seq_num:%d, link_entries[",package->ttl, package->type ? "ACK":"LSA", package->sender_id, package->seq_num);
     int i;
     for(i = 0; i < package->num_link_entries; i++){
         length += snprintf(buf + length, MAX_MSG_LEN - length, "%lu,",package->link_entries[i]);
-    } 
-    length--;   
+    }  
     length += snprintf(buf + length, MAX_MSG_LEN - length, "], user_entries[");
     for(i = 0; i < package->num_user_entries; i++){
         length += snprintf(buf + length, MAX_MSG_LEN - length, "%s,",package->user_entries[i]);
     }    
-    length--;
     length += snprintf(buf + length, MAX_MSG_LEN - length, "], channel_entries[");
     for(i = 0; i < package->num_channel_entries; i++){
         length += snprintf(buf + length, MAX_MSG_LEN - length, "%s,",package->channel_entries[i]);
     }
-    length--;
     length += snprintf(buf + length, MAX_MSG_LEN - length, "] }");
 
     printf("%s\n", buf);
@@ -78,7 +75,6 @@ int main( int argc, char *argv[] ) {
     //init variable
     timeout.tv_sec = 0;
     timeout.tv_usec = 0;
-    ctime(&last_time);
 
     // init rio
     rio.rio_fd = 0;
@@ -92,14 +88,20 @@ int main( int argc, char *argv[] ) {
     /* initialize lsa list */
     init_LSA_list();
     init_wait_ack_list();
+    init_user_cache();
+    init_routing_table();
+    init_self_lsa();
 
 
     FD_ZERO(&read_set);
     maxfd = listen_server_fd > udp_fd ? listen_server_fd:udp_fd;
+    
     while (1) {
-        
+
         //advertise_cycle_time is up?
         if( is_time_to_advertise(&last_time) ){
+            //debug
+            printf("@node:%lu time to advertise\n", curr_nodeID);
             broadcast_self(udp_fd);
         }
 
@@ -122,10 +124,16 @@ int main( int argc, char *argv[] ) {
             if( FD_ISSET(listen_server_fd,&read_set) ){
                 Rio_readinitb(&rio,Accept(listen_server_fd, (SA *)&clientaddr, &clientlen));
                 maxfd = maxfd > rio.rio_fd ? maxfd : rio.rio_fd;
+                //debug
+                printf("@node:%lu server connect at fd:%d, connect fd is %d\n",curr_nodeID, listen_server_fd, rio.rio_fd);
+        
             }
             //new command from server INCOMMING_SERVER_CMD
             if(rio.rio_fd && FD_ISSET(rio.rio_fd,&read_set)){
                 if(process_server_cmd(&rio,udp_fd)){
+                    //debug
+                    printf("@node:%lu server EOF\n",curr_nodeID);
+                    
                     /* Server EOF */
                     FD_CLR(rio.rio_fd, &read_set);
                     rio.rio_fd = 0;
@@ -133,6 +141,8 @@ int main( int argc, char *argv[] ) {
             }
             //LSA from daemon INCOMMING_ADVERTISEMENT
             if(FD_ISSET(udp_fd,&read_set)){
+                //debug
+                printf("@node:%lu receive lsa from daemon\n",curr_nodeID);
                 process_incoming_lsa(udp_fd);
             }
         }
@@ -153,12 +163,12 @@ void remove_expired_lsa_and_neighbor(int udp_fd){
 
     for(cur_lsa_p = lsa_header->next; cur_lsa_p != lsa_footer; cur_lsa_p = cur_lsa_p->next){
         elapsed_time = cur_time - cur_lsa_p->receive_time;
-        if( elapsed_time >= lsa_timeout ){
+        if( cur_lsa_p->package->sender_id != curr_nodeID && elapsed_time >= lsa_timeout ){
             remove_LSA_list(cur_lsa_p);      
         }
         if( elapsed_time >= neighbor_timeout && is_neighbor(cur_lsa_p->package->sender_id) ){
             cur_lsa_p->package->ttl = 1;
-            broadcast_neightbor(udp_fd, cur_lsa_p->package,NULL);
+            broadcast_neighbor(udp_fd, cur_lsa_p->package,NULL);
         }
     }
 }
@@ -189,13 +199,16 @@ void retransmit_ack(int udp_fd){
     }
 }
 
-void broadcast_neightbor( int udp_sock, LSA *package_to_broadcast, struct sockaddr_in *except_addr){
+void broadcast_neighbor( int udp_sock, LSA *package_to_broadcast, struct sockaddr_in *except_addr){
     int i;
     struct sockaddr_in target_addr;
     int result;
     for(i = 0; i < self_lsa.num_link_entries; i++){
         result = get_addr_by_nodeID(self_lsa.link_entries[i],&target_addr);
-        if(result && !except_addr && equal_addr(&target_addr,except_addr)){
+       
+        if(result && !equal_addr(&target_addr,except_addr)){
+            //debug
+            print_package_as_string(package_to_broadcast);
             send_to(udp_sock, package_to_broadcast,&target_addr);
         }
     }
@@ -203,7 +216,7 @@ void broadcast_neightbor( int udp_sock, LSA *package_to_broadcast, struct sockad
 
 void broadcast_self(int udp_fd){
     self_lsa.seq_num++;
-    broadcast_neightbor(udp_fd,&self_lsa,NULL);
+    broadcast_neighbor(udp_fd,&self_lsa,NULL);
 }
 
 int get_addr_by_nodeID(int nodeID, struct sockaddr_in *target_addr){
@@ -224,23 +237,34 @@ int get_addr_by_nodeID(int nodeID, struct sockaddr_in *target_addr){
 }
 
 
-void init_self_lsa(int node_id){
+void init_self_lsa(){
+    int i,j;
+    u_long nodeID;
+
     self_lsa.version = 1;
     self_lsa.ttl = 32;
     self_lsa.type = 0;
     
-    self_lsa.sender_id = node_id;
+    self_lsa.sender_id = curr_nodeID;
     self_lsa.seq_num = 0;
 
-    self_lsa.num_link_entries = 0;
+    self_lsa.num_link_entries = curr_node_config_file.size-1;
     self_lsa.num_user_entries = 0;
     self_lsa.num_channel_entries = 0;
+   
+    for(i = 0, j = 0; i < curr_node_config_file.size; i++){
+        if((nodeID = curr_node_config_file.entries[i].nodeID) != curr_nodeID){
+             self_lsa.link_entries[j++] = nodeID;
+        }  
+    }
 
-    LSA_list* LSA_to_send = NULL;
-    insert_LSA_list(&self_lsa, LSA_to_send);
+    insert_LSA_list(&self_lsa, NULL);
 }
 
 void process_incoming_lsa(int udp_fd){
+    //debug
+    printf("@node:%lu in process_incoming_lsa\n",curr_nodeID);
+
     LSA* package_in = (LSA*) Calloc(1,sizeof(LSA));
     struct sockaddr_in cli_addr;
     socklen_t clilen = sizeof(cli_addr);
@@ -249,6 +273,7 @@ void process_incoming_lsa(int udp_fd){
     rt_recvfrom(udp_fd, package_in,sizeof(LSA), 0, (struct sockaddr *)&cli_addr, (socklen_t *)&clilen);
     //debug
     print_package_as_string(package_in);
+    printf("@node:%lu after rt_recvfrom and print_package_as_string\n",curr_nodeID);
 
     /* if the package is an ack */
     if(package_in->type){
@@ -261,6 +286,8 @@ void process_incoming_lsa(int udp_fd){
     ack.type = 1;
     ack.sender_id = package_in->sender_id;
     ack.seq_num = package_in->seq_num;
+     //debug
+    print_package_as_string(&ack);
     send_to(udp_fd,&ack, &cli_addr);
 
     /* 
@@ -270,7 +297,7 @@ void process_incoming_lsa(int udp_fd){
     if(package_in->ttl == 0 && package_in->sender_id != curr_nodeID){
         delete_lsa_by_sender(package_in->sender_id);
         package_in->ttl++;
-        broadcast_neightbor(udp_fd, package_in, &cli_addr);
+        broadcast_neighbor(udp_fd, package_in, &cli_addr);
         return;
     }
 
@@ -287,7 +314,7 @@ void process_incoming_lsa(int udp_fd){
     LSA_list* LSA_to_send = NULL;
     switch(insert_LSA_list(package_in,LSA_to_send)){
         case CONTINUE_FLOODING:
-            broadcast_neightbor(udp_fd,LSA_to_send->package, &cli_addr);            
+            broadcast_neighbor(udp_fd,LSA_to_send->package, &cli_addr);            
             break;
         case DISCARD:
             break;
@@ -302,6 +329,10 @@ int process_server_cmd(rio_t* rio, int udp_fd){
 
     if(Rio_readlineb(rio,buf,MAXLINE) > 0){
         get_msg(buf,buf);
+
+        //debug
+        printf("@node:%lu daemon received command %s\n",curr_nodeID, buf);
+    
         handle_command(buf,rio->rio_fd,udp_fd);
         while( rio->rio_cnt > 0 ){
             Rio_readlineb(rio,buf,MAXLINE);
@@ -320,7 +351,7 @@ int is_time_to_advertise(time_t *last_time){
     time_t cur_time;
     ctime(&cur_time);
     long elapsed_time = cur_time - *last_time;
-    if(args.advertisement_cycle_time >= elapsed_time){
+    if(args.advertisement_cycle_time <= elapsed_time){
         *last_time = cur_time;
         return 1;
     }

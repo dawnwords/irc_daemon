@@ -22,9 +22,13 @@ void add_to_wait_ack_list(LSA* package,struct sockaddr_in *target_addr){
 }
 
 void remove_one_frome_wait_ack_list(wait_ack_list* wait_ack_node){
-	wait_ack_node->prev->next = wait_ack_node->next;
-	wait_ack_node->next->prev = wait_ack_node->prev;
-	Free(wait_ack_node);
+	if(wait_ack_node){
+		wait_ack_node->prev->next = wait_ack_node->next;
+		wait_ack_node->next->prev = wait_ack_node->prev;
+				//debug
+        printf("!!at remove_one_frome_wait_ack_list\n");	
+		Free(wait_ack_node);	
+	}
 }
 
 void remove_from_wait_ack_list(LSA* package,struct sockaddr_in *target_addr){
@@ -39,7 +43,7 @@ void remove_from_wait_ack_list(LSA* package,struct sockaddr_in *target_addr){
 
 
 int equal_addr(struct sockaddr_in* addr1,struct sockaddr_in* addr2){
-	if(addr1->sin_addr.s_addr == addr2->sin_addr.s_addr &&
+	if(addr1 && addr2 && addr1->sin_addr.s_addr == addr2->sin_addr.s_addr &&
 		addr1->sin_port == addr2->sin_port)
 		return 1;
 	return 0;
