@@ -142,7 +142,7 @@ u_long find_next_hop(u_long src,u_long dst,u_long cur){
 			for(i = 0;i < temp->length;i++)
 				if(temp->path[i] == cur)
 					return temp->path[i+1];
-	return -1;
+	return 0;
 }
 
 
@@ -159,5 +159,5 @@ void find_next_hop_with_distance(u_long cur,u_long dst,u_long* next_hop, int* di
 		}
 	}
 
-	*next_hop = -1;
+	*next_hop = 0;
 }

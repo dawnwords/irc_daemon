@@ -26,29 +26,29 @@ LSA_list* find_LSA_list(unsigned long sender_id){
 }
 
 int insert_LSA_list(LSA* new_package,LSA_list* LSA_to_send){
-	LSA_list* old_LSA = find_LSA_list(new_package->sender_id);
-	int flag = new_package->seq_num - old_LSA->package->seq_num;
+	LSA_list* lsa = find_LSA_list(new_package->sender_id);
+	int flag = new_package->seq_num - lsa->package->seq_num;
 
-	if(old_LSA){
+	if(lsa){
 		if(flag == 0)
 			return DISCARD;
 		if(flag < 0){
-			LSA_to_send = old_LSA;
+			LSA_to_send = lsa;
 			return SEND_BACK;
-		}			
-		remove_LSA_list(old_LSA);
+		}		
+	}else{
+		lsa = (LSA_list*) Calloc(1,sizeof(LSA_list));
+		discard_tree();
 	} 
-	
-	LSA_list* new_LSA = (LSA_list*) Calloc(1,sizeof(LSA_list));
-	new_LSA->package = new_package;
-	ctime(&new_LSA->receive_time);
+	lsa->package = new_package;
+	ctime(&lsa->receive_time);
 
-	new_LSA->prev = lsa_footer->prev;
-	new_LSA->next = lsa_footer;
-	lsa_footer->prev->next = new_LSA;
-	lsa_footer->prev = new_LSA;
+	lsa->prev = lsa_footer->prev;
+	lsa->next = lsa_footer;
+	lsa_footer->prev->next = lsa;
+	lsa_footer->prev = lsa;
 
-	LSA_to_send = new_LSA;
+	LSA_to_send = lsa;
 	return CONTINUE_FLOODING;		
 }
 
@@ -56,6 +56,7 @@ void remove_LSA_list(LSA_list* LSA_entry){
 	LSA_entry->prev->next = LSA_entry->next;
 	LSA_entry->next->prev = LSA_entry->prev;
 	free_LSA_list(LSA_entry);
+	discard_tree();
 }
 
 void delete_lsa_by_sender(unsigned long sender_id){
@@ -66,5 +67,17 @@ void delete_lsa_by_sender(unsigned long sender_id){
 
 u_long find_nodeID_by_nickname(char *nickname){
 	LSA_list * cur_lsa_p;
-	
+	int num_user_entries,i;
+	for(cur_lsa_p = lsa_header->next; cur_lsa_p != lsa_footer; cur_lsa_p = cur_lsa_p->next){
+		num_user_entries = cur_lsa_p->package->num_user_entries;
+		
+		for(i = 0; i < num_user_entries; i++){
+			if(!strncmp(cur_lsa_p->package->user_entries[i],nickname,MAX_NAME_LENGTH)){
+				return cur_lsa_p->package->sender_id;
+			} 
+		}
+	}
+
+	return 0;
+
 }

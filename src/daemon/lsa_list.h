@@ -4,6 +4,7 @@
 #include "../common/csapp.h"
 #include "../common/rtlib.h"
 #include "../common/util.h"
+#include "routing_table.h"
 
 #define CONTINUE_FLOODING 	1
 #define DISCARD				0

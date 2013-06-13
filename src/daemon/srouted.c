@@ -25,7 +25,7 @@ char *command[] = {
 
 #define N_CMD (sizeof(command)/sizeof(command[0]))  
 
-void (*handler[])(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num) = {
+void (*handler[])(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num) = {
     &handle_ADDUSER,
     &handle_REMOVEUSER,
     &handle_ADDCHAN,
@@ -35,6 +35,35 @@ void (*handler[])(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int to
     &handle_NEXTHOP,
     &handle_NEXTHOPS
 };
+
+/******************************************
+ *         debug function
+ ******************************************/
+void print_package_as_string(LSA *package){
+    char buf[MAX_MSG_LEN];
+    int length = 0;
+    length += snprintf(buf + length, MAX_MSG_LEN - length, "{ ttl:%d, type:%s, sender_id:%lu, seq_num:%d, link_entries[ ",package->ttl, package->type ? "ACK":"LSA", package->sender_id, package->seq_num);
+    int i;
+    for(i = 0; i < package->num_link_entries; i++){
+        length += snprintf(buf + length, MAX_MSG_LEN - length, "%lu,",package->link_entries[i]);
+    } 
+    length--;   
+    length += snprintf(buf + length, MAX_MSG_LEN - length, "], user_entries[");
+    for(i = 0; i < package->num_user_entries; i++){
+        length += snprintf(buf + length, MAX_MSG_LEN - length, "%s,",package->user_entries[i]);
+    }    
+    length--;
+    length += snprintf(buf + length, MAX_MSG_LEN - length, "], channel_entries[");
+    for(i = 0; i < package->num_channel_entries; i++){
+        length += snprintf(buf + length, MAX_MSG_LEN - length, "%s,",package->channel_entries[i]);
+    }
+    length--;
+    length += snprintf(buf + length, MAX_MSG_LEN - length, "] }");
+
+    printf("%s\n", buf);
+}   
+
+
 
 /* Main */
 int main( int argc, char *argv[] ) {
@@ -71,7 +100,7 @@ int main( int argc, char *argv[] ) {
         
         //advertise_cycle_time is up?
         if( is_time_to_advertise(&last_time) ){
-            broadcast_neightbor(udp_fd,&self_lsa,NULL);  
+            broadcast_self(udp_fd);
         }
 
         //lsa_timeout & neighbor_timeout is up?
@@ -96,7 +125,7 @@ int main( int argc, char *argv[] ) {
             }
             //new command from server INCOMMING_SERVER_CMD
             if(rio.rio_fd && FD_ISSET(rio.rio_fd,&read_set)){
-                if(process_server_cmd(&rio)){
+                if(process_server_cmd(&rio,udp_fd)){
                     /* Server EOF */
                     FD_CLR(rio.rio_fd, &read_set);
                     rio.rio_fd = 0;
@@ -132,7 +161,6 @@ void remove_expired_lsa_and_neighbor(int udp_fd){
             broadcast_neightbor(udp_fd, cur_lsa_p->package,NULL);
         }
     }
-    
 }
 
 int is_neighbor( u_long nodeID ){
@@ -171,6 +199,11 @@ void broadcast_neightbor( int udp_sock, LSA *package_to_broadcast, struct sockad
             send_to(udp_sock, package_to_broadcast,&target_addr);
         }
     }
+}
+
+void broadcast_self(int udp_fd){
+    self_lsa.seq_num++;
+    broadcast_neightbor(udp_fd,&self_lsa,NULL);
 }
 
 int get_addr_by_nodeID(int nodeID, struct sockaddr_in *target_addr){
@@ -214,7 +247,9 @@ void process_incoming_lsa(int udp_fd){
 
     /* receive a udp package from other daemon */
     rt_recvfrom(udp_fd, package_in,sizeof(LSA), 0, (struct sockaddr *)&cli_addr, (socklen_t *)&clilen);
-    
+    //debug
+    print_package_as_string(package_in);
+
     /* if the package is an ack */
     if(package_in->type){
         remove_from_wait_ack_list(package_in, &cli_addr);
@@ -262,16 +297,16 @@ void process_incoming_lsa(int udp_fd){
     }   
 }
 
-int process_server_cmd(rio_t* rio){
+int process_server_cmd(rio_t* rio, int udp_fd){
     char buf[MAXLINE];      //current command line
 
     if(Rio_readlineb(rio,buf,MAXLINE) > 0){
         get_msg(buf,buf);
-        handle_command(buf,rio->rio_fd);
+        handle_command(buf,rio->rio_fd,udp_fd);
         while( rio->rio_cnt > 0 ){
             Rio_readlineb(rio,buf,MAXLINE);
             get_msg(buf,buf);
-            handle_command(buf,rio->rio_fd);
+            handle_command(buf,rio->rio_fd, udp_fd);
         }
         return 0;
     }else{
@@ -302,7 +337,7 @@ void reply(int connfd, char const * const message){
 /******************************************
  *         handle server command
  ******************************************/
-void handle_command(char *msg, int connfd){
+void handle_command(char *msg, int connfd, int udp_fd){
     char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1];
     int tokens_num;
     char *cmd;
@@ -314,17 +349,18 @@ void handle_command(char *msg, int connfd){
     for (i = 0; i < N_CMD; ++i){
         if(strcasecmp(cmd, command[i]) == 0){
             //if it is a valide command, use corresponding handler to handle it.
-            (handler[i])(connfd, tokens, tokens_num); //an array that stores pointer to function
+            (handler[i])(connfd, udp_fd, tokens, tokens_num); //an array that stores pointer to function
         }
     }
 }
 
-void handle_ADDUSER(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
+void handle_ADDUSER(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
     strncpy(self_lsa.user_entries[self_lsa.num_user_entries++],tokens[1],MAX_NAME_LENGTH);
     reply(connfd,"OK");
+    broadcast_self(udp_fd);
 }
 
-void handle_REMOVEUSER(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
+void handle_REMOVEUSER(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
     int i;
 
     for(i = 0;i<self_lsa.num_user_entries;i++){
@@ -335,32 +371,59 @@ void handle_REMOVEUSER(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], i
             break;
         }
     }
+    reply(connfd,"OK");
+    broadcast_self(udp_fd);  
+}
 
+void handle_ADDCHAN(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
     reply(connfd,"OK");
 }
 
-void handle_ADDCHAN(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
+void handle_REMOVECHAN(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
     reply(connfd,"OK");
 }
 
-void handle_REMOVECHAN(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
-    reply(connfd,"OK");
+void handle_USERTABLE(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
+    LSA_list *cur_lsa_p = lsa_header->next;
+    int i;
+    int total_num_user = 0;
+    int length = 0;
+    char *nickname;
+    char buf[MAX_MSG_LEN];
+    char tmp_buf[MAX_MSG_LEN];
+    int tmp_length = 0;
+    user_cache_list_t * temp;
+    LSA * package;
+
+    for(; cur_lsa_p != lsa_footer; cur_lsa_p = cur_lsa_p->next){
+        package = cur_lsa_p->package;
+        if( package != &self_lsa){
+            for(i = 0; i < package->num_user_entries; i++){
+                total_num_user++;
+                nickname = package->user_entries[i];
+                temp = insert_user_cache_item(nickname);
+                length += snprintf(buf + length, MAX_MSG_LEN - length, "%s %lu %d\n",nickname, temp->user_item.next_hop, temp->user_item.distance);
+            }
+        }
+    }
+    tmp_length += snprintf(tmp_buf+tmp_length, MAX_MSG_LEN - tmp_length, "OK %d\n%s",total_num_user,buf);
+    reply(connfd,tmp_buf);
 }
 
-void handle_USERTABLE(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
+void handle_CHANTABLE(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
     reply(connfd,"OK 0");
 }
 
-void handle_CHANTABLE(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
-    reply(connfd,"OK 0");
+void handle_NEXTHOP(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
+    char *nickname = tokens[1];
+    user_cache_list_t * temp = insert_user_cache_item(nickname);
+    int length = 0;
+    char buf[MAX_MSG_LEN];
+    length += snprintf(buf + length, MAX_MSG_LEN - length, "OK %lu %d\n",temp->user_item.next_hop, temp->user_item.distance);
+    reply(connfd,buf);
 }
 
-void handle_NEXTHOP(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
-    reply(connfd,"OK");
-}
-
-void handle_NEXTHOPS(int connfd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
+void handle_NEXTHOPS(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
     reply(connfd,"OK");   
 }
-
 
