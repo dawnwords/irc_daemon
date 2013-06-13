@@ -86,18 +86,17 @@ int has_built(u_long src){
 	return 0;
 }
 
-u_long find_next_hop(u_long src,u_long dst){
-	int i;
+void build_shortest_path_tree(u_long src){
 	/* if the tree starting at src has not been built, start dijkstra algorithm */
 	if(has_built(src)){		
 		routing_table *next, *tentative_entry;
 		LSA_list* lsa;
-		int j, new_len;
+		int i, j, new_len;
 		u_long neighbor;
 
 		// 1) 2) set next as src
 		u_long path[32];
-		path[0] = dst;
+		path[0] = src;
 		next = insert_before_routing_table(src,1,path,routing_footer);
 
 		while(1){
@@ -130,15 +129,35 @@ u_long find_next_hop(u_long src,u_long dst){
 			}
 		}
 	}
-	
-	/* traverse to find next hop */	
+}
+
+u_long find_next_hop(u_long src,u_long dst,u_long cur){
+	build_shortest_path_tree(src);
+
+	/* traverse to find next hop to dst*/
+	routing_table *temp;
+	int i;
+	for(temp = routing_header->next;temp != routing_footer;temp = temp->next)
+		if(temp->dst_id == dst && temp->path[0] == src)
+			for(i = 0;i < temp->length;i++)
+				if(temp->path[i] == cur)
+					return temp->path[i+1];
+	return -1;
+}
+
+
+void find_next_hop_with_distance(u_long cur,u_long dst,u_long* next_hop, int* distance){
+	build_shortest_path_tree(cur);
+
+	/* traverse to find next hop and distance to dst*/	
 	routing_table *temp;
 	for(temp = routing_header->next;temp != routing_footer;temp = temp->next){
-		if(temp->dst_id == dst && temp->path[0] == src){
-			for(i = 0;i < temp->length;i++)
-				if(temp->path[i] == dst)
-					return temp->path[i+1];	
+		if(temp->dst_id == dst && temp->path[0] == cur){
+			*next_hop = temp->path[1];
+			*distance = temp->length - 1;
+			return;
 		}
 	}
-	return -1;
+
+	*next_hop = -1;
 }
