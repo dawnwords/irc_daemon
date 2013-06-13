@@ -63,3 +63,8 @@ void delete_lsa_by_sender(unsigned long sender_id){
 	if(LSA)
 		remove_LSA_list(LSA);
 }
+
+u_long find_nodeID_by_nickname(char *nickname){
+	LSA_list * cur_lsa_p;
+	
+}
