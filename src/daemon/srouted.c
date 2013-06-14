@@ -74,7 +74,6 @@ int main( int argc, char *argv[] ) {
     init_self_lsa();
 
 
-    FD_ZERO(&read_set);
     maxfd = listen_server_fd > udp_fd ? listen_server_fd:udp_fd;
     
     while (1) {
@@ -90,6 +89,7 @@ int main( int argc, char *argv[] ) {
 
         retransmit_ack(udp_fd);
 
+        FD_ZERO(&read_set);
         FD_SET(listen_server_fd,&read_set);
         FD_SET(udp_fd,&read_set);
         if(rio.rio_fd){
