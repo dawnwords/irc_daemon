@@ -57,7 +57,6 @@ void remove_from_wait_ack_list(LSA* package,struct sockaddr_in *target_addr){
 			equal_addr(target_addr,&temp->target_addr))
 			remove_one_frome_wait_ack_list(temp);
 	}
-	write_log("end remove_from_wait_ack_list\n");
 }
 
 

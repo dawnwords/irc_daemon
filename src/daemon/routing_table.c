@@ -41,14 +41,11 @@ void delete_routing_table(routing_table *element){
 }
 
 void discard_tree(){
-
 	routing_table *temp = routing_header->next;
 	while(temp != routing_footer){
-		printf("in discard_tree, pointer is %p\n", temp);
 		temp = temp->next;
 		Free(temp->prev);
 	}
-	printf("end of discard_tree\n");
 	routing_header->next = routing_footer;
     routing_footer->prev = routing_header;
 }

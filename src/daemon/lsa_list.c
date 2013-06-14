@@ -27,7 +27,7 @@ LSA_list* find_LSA_list(unsigned long sender_id){
     return NULL;
 }
 
-int insert_LSA_list(LSA* new_package,LSA* LSA_to_send){
+int insert_LSA_list(LSA* new_package,LSA** LSA_to_send){
 	LSA_list* lsa = find_LSA_list(new_package->sender_id);
 	int flag;
 	if(lsa){
@@ -35,7 +35,8 @@ int insert_LSA_list(LSA* new_package,LSA* LSA_to_send){
 		if(flag == 0)
 			return DISCARD;
 		if(flag < 0){
-			LSA_to_send = lsa->package;
+			if(LSA_to_send)
+				*LSA_to_send = lsa->package;
 			return SEND_BACK;
 		}	
 	}else{
@@ -50,7 +51,8 @@ int insert_LSA_list(LSA* new_package,LSA* LSA_to_send){
 	lsa_footer->prev->next = lsa;
 	lsa_footer->prev = lsa;
 
-	LSA_to_send = lsa->package;
+	if(LSA_to_send)
+		*LSA_to_send = lsa->package;
 
 	return CONTINUE_FLOODING;		
 }

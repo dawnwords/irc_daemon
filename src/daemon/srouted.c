@@ -187,8 +187,7 @@ void broadcast_neighbor( int udp_sock, LSA *package_to_broadcast, struct sockadd
         if(result && !equal_addr(&target_addr,except_addr)){
             //debug
             write_log("address to send is ip:%s port:%d\n",inet_ntoa(target_addr.sin_addr), ntohs(target_addr.sin_port));
-            write_log("package to send is\n");
-            write_log("@@@@@ package_to_broadcast address is %p\n",package_to_broadcast );
+            write_log("package to send is\n");            
             print_package_as_string(package_to_broadcast);
             send_to(udp_sock, package_to_broadcast, &target_addr);
         }
@@ -302,9 +301,10 @@ void process_incoming_lsa(int udp_fd){
 
     /* insert package_in */
     LSA* LSA_to_send = NULL;
-    switch(insert_LSA_list(package_in,LSA_to_send)){
-        case CONTINUE_FLOODING:
-            write_log("CONTINUE_FLOODING\n");
+    switch(insert_LSA_list(package_in,&LSA_to_send)){
+        case CONTINUE_FLOODING:            
+            write_log("CONTINUE_FLOODING LSA_to_send:%p\n",LSA_to_send);
+            print_package_as_string(package_in);
             broadcast_neighbor(udp_fd,LSA_to_send, &cli_addr);            
             break;
         case DISCARD:

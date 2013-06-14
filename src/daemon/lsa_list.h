@@ -41,7 +41,7 @@ typedef struct LSA_list_struct{
 void init_LSA_list();
 void free_LSA_list(LSA_list* LSA);
 LSA_list* find_LSA_list(unsigned long sender_id);
-int insert_LSA_list(LSA* new_package,LSA* LSA_to_send);
+int insert_LSA_list(LSA* new_package,LSA** LSA_to_send);
 void remove_LSA_list(LSA_list* LSA_entry);
 void delete_lsa_by_sender(unsigned long sender_id);
 u_long find_nodeID_by_nickname(char *nickname);
