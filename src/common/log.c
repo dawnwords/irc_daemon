@@ -17,7 +17,8 @@ void write_log(const char *form, ...){
     va_start(arg,form);  
     vsprintf(pbString,form,arg);
     fprintf(log_fp,"%s",pbString);
-    va_end(arg);   
+    va_end(arg);
+       
     fflush(log_fp);
 }
  

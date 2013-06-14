@@ -9,7 +9,7 @@
 #include "wait_ack_list.h"
 
 
-void send_to(int udp_sock, LSA *package_to_send,struct sockaddr_in *target_addrp);
+int send_to(int udp_sock, LSA *package_to_send,struct sockaddr_in *target_addrp);
 int init_udp_server_socket(int port);
 
 #endif /*__UDP_H__*/

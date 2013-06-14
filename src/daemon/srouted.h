@@ -44,7 +44,7 @@ void retransmit_ack(int udp_fd);
 int is_neighbor( u_long nodeID );
 void remove_expired_lsa_and_neighbor(int udp_fd);
 void broadcast_neighbor(int sock_fd, LSA *package_to_broadcast, struct sockaddr_in *except_addr);
-int get_addr_by_nodeID(int nodeID, struct sockaddr_in *target_addr);
+int get_addr_by_nodeID(u_long nodeID, struct sockaddr_in *target_addr);
 int is_time_to_advertise(time_t *last_time);
 int process_server_cmd(rio_t* rio, int udp_fd);
 void broadcast_self(int udp_fd);

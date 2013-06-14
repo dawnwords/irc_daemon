@@ -1,4 +1,5 @@
 #include "udp.h"
+extern int errno;
 
 int init_udp_server_socket(int port){
     int listenfd; 
@@ -22,9 +23,16 @@ int init_udp_server_socket(int port){
     return listenfd;
 }
 
-void send_to(int udp_sock, LSA *package_to_send,struct sockaddr_in *target_addrp){
+int send_to(int udp_sock, LSA *package_to_send,struct sockaddr_in *target_addrp){
+    int error;
     package_to_send->ttl--;
-    rt_sendto(udp_sock, package_to_send, sizeof(LSA), 0, (SA *)target_addrp, sizeof(struct sockaddr_in));
+    if( (error = rt_sendto(udp_sock, package_to_send, sizeof(LSA), 0, (SA *)target_addrp, sizeof(struct sockaddr_in))) < 0){
+        printf("%s\n", strerror(errno));
+        return error;
+    }
+    write_log("in send_to:rt_sendto return success,package to add to wait ack list is:\n");
+    print_package_as_string(package_to_send);
     add_to_wait_ack_list(package_to_send, target_addrp);
     package_to_send->ttl++;
+    return error;
 }

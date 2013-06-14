@@ -92,15 +92,15 @@ void print_package_as_string(LSA *package){
     for(i = 0; i < package->num_link_entries; i++){
         length += snprintf(buf + length, MAX_MSG_LEN - length, "%lu,",package->link_entries[i]);
     }  
-    length += snprintf(buf + length, MAX_MSG_LEN - length, "], user_entries[");
+    length += snprintf(buf + length, MAX_MSG_LEN - length, "%s","], user_entries[");
     for(i = 0; i < package->num_user_entries; i++){
         length += snprintf(buf + length, MAX_MSG_LEN - length, "%s,",package->user_entries[i]);
     }    
-    length += snprintf(buf + length, MAX_MSG_LEN - length, "], channel_entries[");
+    length += snprintf(buf + length, MAX_MSG_LEN - length, "%s", "], channel_entries[");
     for(i = 0; i < package->num_channel_entries; i++){
         length += snprintf(buf + length, MAX_MSG_LEN - length, "%s,",package->channel_entries[i]);
     }
-    length += snprintf(buf + length, MAX_MSG_LEN - length, "] }\n");
+    length += snprintf(buf + length, MAX_MSG_LEN - length, "%s", "] }\n");
 
     write_log(buf);
 }   
