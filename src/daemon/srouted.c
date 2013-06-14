@@ -122,11 +122,6 @@ int main( int argc, char *argv[] ) {
                 process_incoming_lsa(udp_fd);
             }
         }
-
-        if(curr_nodeID == 1 || curr_nodeID == 3){
-            printf("%lu\n",curr_nodeID );
-        }
-
     }
 
     return 0;
@@ -302,18 +297,18 @@ void process_incoming_lsa(int udp_fd){
     }
 
     /* insert package_in */
-    LSA_list* LSA_to_send = NULL;
+    LSA* LSA_to_send = NULL;
     switch(insert_LSA_list(package_in,LSA_to_send)){
         case CONTINUE_FLOODING:
             write_log("CONTINUE_FLOODING\n");
-            broadcast_neighbor(udp_fd,LSA_to_send->package, &cli_addr);            
+            broadcast_neighbor(udp_fd,LSA_to_send, &cli_addr);            
             break;
         case DISCARD:
             write_log("DISCARD\n");
             break;
         case SEND_BACK:
             write_log("SEND_BACK\n");
-            send_to(udp_fd,LSA_to_send->package, &cli_addr);
+            send_to(udp_fd,LSA_to_send, &cli_addr);
             break;
     }   
 }
