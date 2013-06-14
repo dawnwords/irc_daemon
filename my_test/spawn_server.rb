@@ -400,10 +400,10 @@ begin
 
 # puts "Connecting to the daemons..."
 # # Now connect a TCP socket to the daemons
-# rdaemon1 = conn_daemon("cp4node1.conf", 1)
+rdaemon1 = conn_daemon("cp4node1.conf", 1)
 rdaemon2 = conn_daemon("cp4node2.conf", 2)
-# rdaemon3 = conn_daemon("cp4node3.conf", 3)
-# rdaemon4 = conn_daemon("cp4node4.conf", 4)
+rdaemon3 = conn_daemon("cp4node3.conf", 3)
+rdaemon4 = conn_daemon("cp4node4.conf", 4)
 
 # puts "Sleeping for 5 seconds to let everything settle."
 sleep(1000)
@@ -412,7 +412,7 @@ sleep(1000)
 # # I am going to add a user on node1 and node4,
 # # then test the USERTABLE response at 2 and 3
 # 	tn = test_name("USERTABLE @ Node 2")
-	rdaemon2.adduser("gnychis")
+#   rdaemon2.adduser("gnychis")
 # 	rdaemon1.ignore_reply()
 # 	rdaemon4.adduser("dga")
 # 	rdaemon4.ignore_reply()
