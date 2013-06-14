@@ -22,7 +22,7 @@ void printf_wait_list(){
 	write_log("====================\n");
 }
 
-void add_to_wait_ack_list(LSA* package,struct sockaddr_in *target_addr){
+void add_to_wait_ack_list(LSA const*package,struct sockaddr_in const*target_addr){
 	wait_ack_list* new_wait_ack = (wait_ack_list*) Calloc(1,sizeof(wait_ack_list));
 	new_wait_ack->last_send = time(NULL);
 	// memcpy(&new_wait_ack->target_addr,target_addr,sizeof(struct sockaddr_in));
@@ -43,24 +43,33 @@ void remove_one_frome_wait_ack_list(wait_ack_list* wait_ack_node){
 	if(wait_ack_node){		
 		wait_ack_node->prev->next = wait_ack_node->next;
 		wait_ack_node->next->prev = wait_ack_node->prev;
+		wait_ack_node->prev = NULL;
+		wait_ack_node->next = NULL;
 		Free(wait_ack_node);	
 	}
 	write_log("remove_from_wait_ack_list\n");
 	printf_wait_list();
 }
 
-void remove_from_wait_ack_list(LSA* package,struct sockaddr_in *target_addr){
-	wait_ack_list* temp;
-	for (temp = wait_header->next; temp != wait_footer; temp = temp->next) {
+void remove_from_wait_ack_list(LSA const *package,struct sockaddr_in const *target_addr){
+	wait_ack_list* temp = wait_header->next;
+	write_log("in remove_from_wait_ack_list, target_addr is @ %p\n",target_addr);
+	while (temp != wait_footer) {
+		write_log("in remove_from_wait_ack_list, temp address is %p\n",temp);
 		if(package->sender_id == temp->package.sender_id &&
 			package->seq_num >= temp->package.seq_num &&
-			equal_addr(target_addr,&temp->target_addr))
-			remove_one_frome_wait_ack_list(temp);
+			equal_addr(target_addr,&temp->target_addr)){
+			temp = temp->next;
+			remove_one_frome_wait_ack_list(temp->prev);
+		}
+		else
+			temp = temp->next;
 	}
+	write_log("remove_from_wait_ack_list finish\n");
 }
 
 
-int equal_addr(struct sockaddr_in* addr1,struct sockaddr_in* addr2){
+int equal_addr(struct sockaddr_in const *addr1,struct sockaddr_in const*addr2){
 	if(addr1 && addr2 && addr1->sin_addr.s_addr == addr2->sin_addr.s_addr &&
 		addr1->sin_port == addr2->sin_port)
 		return 1;
