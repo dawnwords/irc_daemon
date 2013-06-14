@@ -180,7 +180,7 @@ void broadcast_neighbor( int udp_sock, LSA *package_to_broadcast, struct sockadd
     int result;
 
     //debug log
-    write_log("broadcast_neighbor\n");
+    write_log("+++++ broadcast_neighbor\n");
 
     for(i = 0; i < self_lsa.num_link_entries; i++){
         result = get_addr_by_nodeID(self_lsa.link_entries[i],&target_addr);
@@ -191,6 +191,8 @@ void broadcast_neighbor( int udp_sock, LSA *package_to_broadcast, struct sockadd
             send_to(udp_sock, package_to_broadcast,&target_addr);
         }
     }
+    //debug log
+    write_log("+++++ end broadcast_neighbor\n");
 }
 
 void broadcast_self(int udp_fd){
