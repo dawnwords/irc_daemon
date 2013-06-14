@@ -5,15 +5,19 @@ wait_ack_list *wait_header, *wait_footer;
 void init_wait_ack_list(){
 	wait_header = (wait_ack_list*) Calloc(1,sizeof(wait_ack_list));
     wait_footer = (wait_ack_list*) Calloc(1,sizeof(wait_ack_list));
-    wait_header->next = wait_header;
-    wait_footer->prev = wait_footer;   
+    wait_header->next = wait_footer;
+    wait_footer->prev = wait_header;   
 }
 
 void add_to_wait_ack_list(LSA* package,struct sockaddr_in *target_addr){
 	wait_ack_list* new_wait_ack = (wait_ack_list*) Calloc(1,sizeof(wait_ack_list));
-	ctime(&new_wait_ack->last_send);
-	memcpy(&new_wait_ack->target_addr,target_addr,sizeof(struct sockaddr_in));
-	memcpy(&new_wait_ack->package,package,sizeof(LSA));	
+	new_wait_ack->last_send = time(NULL);
+	// memcpy(&new_wait_ack->target_addr,target_addr,sizeof(struct sockaddr_in));
+	// memcpy(&new_wait_ack->package,package,sizeof(LSA));
+	write_log("add_to_wait_ack_list package:");
+	print_package_as_string(package);
+	new_wait_ack->target_addr = *target_addr;
+	new_wait_ack->package = *package;
 
 	new_wait_ack->prev = wait_footer->prev;
 	new_wait_ack->next = wait_footer;
@@ -25,8 +29,6 @@ void remove_one_frome_wait_ack_list(wait_ack_list* wait_ack_node){
 	if(wait_ack_node){
 		wait_ack_node->prev->next = wait_ack_node->next;
 		wait_ack_node->next->prev = wait_ack_node->prev;
-				//debug
-        printf("!!at remove_one_frome_wait_ack_list\n");	
 		Free(wait_ack_node);	
 	}
 }
@@ -34,11 +36,16 @@ void remove_one_frome_wait_ack_list(wait_ack_list* wait_ack_node){
 void remove_from_wait_ack_list(LSA* package,struct sockaddr_in *target_addr){
 	wait_ack_list* temp;
 	for (temp = wait_header->next; temp != wait_footer; temp = temp->next) {
+		write_log("package_in:");
+		print_package_as_string(package);
+		write_log("package_traverse:");
+		print_package_as_string(&temp->package);
 		if(package->sender_id == temp->package.sender_id &&
-			package->seq_num <= temp->package.seq_num &&
+			package->seq_num >= temp->package.seq_num &&
 			equal_addr(target_addr,&temp->target_addr))
 			remove_one_frome_wait_ack_list(temp);
 	}
+	write_log("end remove_from_wait_ack_list\n");
 }
 
 

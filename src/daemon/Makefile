@@ -11,7 +11,7 @@ LIBS	= -pthread
 COM     = ../common/
 
 
-OBJECTS	= srouted.o rtlib.o csapp.o util.o socket.o udp.o rtgrading.o lsa_list.o wait_ack_list.o routing_table.o channel_cache.o user_cache.o
+OBJECTS	= srouted.o rtlib.o csapp.o util.o socket.o udp.o rtgrading.o lsa_list.o wait_ack_list.o routing_table.o channel_cache.o user_cache.o log.o
 
 all:	$(TARGET)
 
@@ -32,6 +32,9 @@ util.o: $(COM)util.c $(COM)util.h
 
 socket.o: $(COM)socket.c $(COM)socket.h
 	$(CC) $(CFLAGS) -c -o $@ $<	
+
+log.o: $(COM)log.c $(COM)log.h
+	$(CC) $(CFLAGS) -c -o $@ $<		
 
 rtgrading.o: rtgrading.c rtgrading.h
 	$(CC) $(CFLAGS) -c -o $@ $<	

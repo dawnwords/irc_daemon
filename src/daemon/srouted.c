@@ -39,28 +39,6 @@ void (*handler[])(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LE
 /******************************************
  *         debug function
  ******************************************/
-void print_package_as_string(LSA *package){
-    char buf[MAX_MSG_LEN];
-    int length = 0;
-    length += snprintf(buf + length, MAX_MSG_LEN - length, "{ ttl:%d, type:%s, sender_id:%lu, seq_num:%d, link_entries[",package->ttl, package->type ? "ACK":"LSA", package->sender_id, package->seq_num);
-    int i;
-    for(i = 0; i < package->num_link_entries; i++){
-        length += snprintf(buf + length, MAX_MSG_LEN - length, "%lu,",package->link_entries[i]);
-    }  
-    length += snprintf(buf + length, MAX_MSG_LEN - length, "], user_entries[");
-    for(i = 0; i < package->num_user_entries; i++){
-        length += snprintf(buf + length, MAX_MSG_LEN - length, "%s,",package->user_entries[i]);
-    }    
-    length += snprintf(buf + length, MAX_MSG_LEN - length, "], channel_entries[");
-    for(i = 0; i < package->num_channel_entries; i++){
-        length += snprintf(buf + length, MAX_MSG_LEN - length, "%s,",package->channel_entries[i]);
-    }
-    length += snprintf(buf + length, MAX_MSG_LEN - length, "] }");
-
-    printf("%s\n", buf);
-}   
-
-
 
 /* Main */
 int main( int argc, char *argv[] ) {
@@ -82,6 +60,9 @@ int main( int argc, char *argv[] ) {
     rt_init(argc, argv);  //must call at beginning
     init_daemon( argc, argv ); // parse command line and fill global variable
     
+    //debug open log file
+    init_log();
+
     listen_server_fd = init_unblocking_server_socket(curr_node_config_entry->local_port);
     udp_fd = init_udp_server_socket(curr_node_config_entry->routing_port);
 
@@ -101,13 +82,15 @@ int main( int argc, char *argv[] ) {
         //advertise_cycle_time is up?
         if( is_time_to_advertise(&last_time) ){
             //debug
-            printf("@node:%lu time to advertise\n", curr_nodeID);
+            write_log("time to advertise\n");
             broadcast_self(udp_fd);
         }
 
+        write_log("remove_expired_lsa_and_neighbor\n");
         //lsa_timeout & neighbor_timeout is up?
         remove_expired_lsa_and_neighbor(udp_fd);
 
+        write_log("retransmit_ack\n");
         //retransmission_timeout is up?
         retransmit_ack(udp_fd);
 
@@ -117,6 +100,7 @@ int main( int argc, char *argv[] ) {
             FD_SET(rio.rio_fd,&read_set);
         }
 
+        write_log("select\n");
         if( (nready = Select(maxfd+1, &read_set, NULL, NULL, &timeout)) < 0){
             unix_error("select error in srouted\n");
         }else if(nready > 0){
@@ -125,14 +109,13 @@ int main( int argc, char *argv[] ) {
                 Rio_readinitb(&rio,Accept(listen_server_fd, (SA *)&clientaddr, &clientlen));
                 maxfd = maxfd > rio.rio_fd ? maxfd : rio.rio_fd;
                 //debug
-                printf("@node:%lu server connect at fd:%d, connect fd is %d\n",curr_nodeID, listen_server_fd, rio.rio_fd);
-        
+                write_log("server connect at fd:%d, connect fd is %d\n",listen_server_fd, rio.rio_fd);
             }
             //new command from server INCOMMING_SERVER_CMD
             if(rio.rio_fd && FD_ISSET(rio.rio_fd,&read_set)){
                 if(process_server_cmd(&rio,udp_fd)){
                     //debug
-                    printf("@node:%lu server EOF\n",curr_nodeID);
+                    write_log("server EOF\n");
                     
                     /* Server EOF */
                     FD_CLR(rio.rio_fd, &read_set);
@@ -142,9 +125,13 @@ int main( int argc, char *argv[] ) {
             //LSA from daemon INCOMMING_ADVERTISEMENT
             if(FD_ISSET(udp_fd,&read_set)){
                 //debug
-                printf("@node:%lu receive lsa from daemon\n",curr_nodeID);
+                write_log("receive lsa from daemon\n");
                 process_incoming_lsa(udp_fd);
             }
+        }
+
+        if(curr_nodeID == 1 || curr_nodeID == 3){
+            printf("%lu\n",curr_nodeID );
         }
 
     }
@@ -159,7 +146,7 @@ void remove_expired_lsa_and_neighbor(int udp_fd){
     u_long neighbor_timeout = args.neighbor_timeout;
     long elapsed_time;
 
-    ctime(&cur_time);
+    cur_time = time(NULL);
 
     for(cur_lsa_p = lsa_header->next; cur_lsa_p != lsa_footer; cur_lsa_p = cur_lsa_p->next){
         elapsed_time = cur_time - cur_lsa_p->receive_time;
@@ -189,12 +176,12 @@ void retransmit_ack(int udp_fd){
     wait_ack_list *cur_lsa_p;
     u_long retransmission_timeout = args.retransmission_timeout;
     long elapsed_time;
-    ctime(&cur_time);
+    cur_time = time(NULL);
     for(cur_lsa_p = wait_header->next; cur_lsa_p != wait_header; cur_lsa_p = cur_lsa_p->next ){
         elapsed_time = cur_time - cur_lsa_p->last_send;
         if(elapsed_time >= retransmission_timeout){
             rt_sendto(udp_fd, &cur_lsa_p->package, sizeof(LSA), 0, (SA *)&cur_lsa_p->target_addr, sizeof(struct sockaddr_in));
-            ctime(&cur_lsa_p->last_send);
+            cur_lsa_p->last_send = time(NULL);
         }
     }
 }
@@ -203,6 +190,10 @@ void broadcast_neighbor( int udp_sock, LSA *package_to_broadcast, struct sockadd
     int i;
     struct sockaddr_in target_addr;
     int result;
+
+    //debug log
+    write_log("broadcast_neighbor\n");
+
     for(i = 0; i < self_lsa.num_link_entries; i++){
         result = get_addr_by_nodeID(self_lsa.link_entries[i],&target_addr);
        
@@ -216,6 +207,7 @@ void broadcast_neighbor( int udp_sock, LSA *package_to_broadcast, struct sockadd
 
 void broadcast_self(int udp_fd){
     self_lsa.seq_num++;
+    write_log("broadcast_self\n");
     broadcast_neighbor(udp_fd,&self_lsa,NULL);
 }
 
@@ -228,8 +220,8 @@ int get_addr_by_nodeID(int nodeID, struct sockaddr_in *target_addr){
         if(nodeID == temp.nodeID){
             bzero(target_addr, sizeof(struct sockaddr_in));
             target_addr->sin_family = AF_INET;
-            target_addr->sin_port = temp.routing_port;
-            target_addr->sin_addr.s_addr = temp.ipaddr;
+            target_addr->sin_port = htons((unsigned short)temp.routing_port);
+            target_addr->sin_addr.s_addr = htonl(temp.ipaddr);
             return 1;
         }
     }
@@ -263,7 +255,7 @@ void init_self_lsa(){
 
 void process_incoming_lsa(int udp_fd){
     //debug
-    printf("@node:%lu in process_incoming_lsa\n",curr_nodeID);
+    write_log("process_incoming_lsa\n");
 
     LSA* package_in = (LSA*) Calloc(1,sizeof(LSA));
     struct sockaddr_in cli_addr;
@@ -273,22 +265,26 @@ void process_incoming_lsa(int udp_fd){
     rt_recvfrom(udp_fd, package_in,sizeof(LSA), 0, (struct sockaddr *)&cli_addr, (socklen_t *)&clilen);
     //debug
     print_package_as_string(package_in);
-    printf("@node:%lu after rt_recvfrom and print_package_as_string\n",curr_nodeID);
 
     /* if the package is an ack */
     if(package_in->type){
+        //debug
+        write_log("receive ack\n");
         remove_from_wait_ack_list(package_in, &cli_addr);
+        write_log("after remove_from_wait_ack_list\n");
         return;
     }
 
     /* send ack back */
     LSA ack;
+    ack.ttl = 32;
     ack.type = 1;
     ack.sender_id = package_in->sender_id;
     ack.seq_num = package_in->seq_num;
      //debug
+    write_log("send ack back\n");
     print_package_as_string(&ack);
-    send_to(udp_fd,&ack, &cli_addr);
+    rt_sendto(udp_fd, &ack, sizeof(LSA), 0, (SA *)&cli_addr, sizeof(struct sockaddr_in));
 
     /* 
      * TTL = 0 and sender is not self, 
@@ -331,7 +327,7 @@ int process_server_cmd(rio_t* rio, int udp_fd){
         get_msg(buf,buf);
 
         //debug
-        printf("@node:%lu daemon received command %s\n",curr_nodeID, buf);
+        write_log("daemon received command %s\n",buf);
     
         handle_command(buf,rio->rio_fd,udp_fd);
         while( rio->rio_cnt > 0 ){
@@ -349,7 +345,7 @@ int process_server_cmd(rio_t* rio, int udp_fd){
 
 int is_time_to_advertise(time_t *last_time){
     time_t cur_time;
-    ctime(&cur_time);
+    cur_time = time(NULL);
     long elapsed_time = cur_time - *last_time;
     if(args.advertisement_cycle_time <= elapsed_time){
         *last_time = cur_time;

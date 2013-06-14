@@ -3,6 +3,7 @@
 
 #include "../common/csapp.h"
 #include "lsa_list.h"
+#include "../common/log.h"
 
 typedef struct ack_list_struct{
 	time_t last_send;

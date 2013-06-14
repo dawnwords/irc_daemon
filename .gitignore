@@ -4,3 +4,5 @@ sircd
 srouted
 cp3nodes.conf
 .tags
+*.log
+cp4node*.conf

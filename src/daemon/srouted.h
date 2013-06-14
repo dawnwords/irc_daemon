@@ -4,6 +4,7 @@
 #include "../common/rtlib.h"
 #include "../common/csapp.h"
 #include "../common/util.h"
+#include "../common/log.h"
 #include "../common/socket.h"
 #include "rtgrading.h"
 #include "udp.h"
@@ -11,6 +12,7 @@
 #include "lsa_list.h"
 #include "wait_ack_list.h"
 #include "user_cache.h"
+#include <stdarg.h>
 
 typedef struct user_struct{
 	char name[MAX_NAME_LENGTH];	

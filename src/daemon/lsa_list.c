@@ -43,7 +43,7 @@ int insert_LSA_list(LSA* new_package,LSA_list* LSA_to_send){
 		discard_tree();
 	} 
 	lsa->package = new_package;
-	ctime(&lsa->receive_time);
+	lsa->receive_time = time(NULL);
 
 	lsa->prev = lsa_footer->prev;
 	lsa->next = lsa_footer;
@@ -82,5 +82,25 @@ u_long find_nodeID_by_nickname(char *nickname){
 	}
 
 	return 0;
-
 }
+
+void print_package_as_string(LSA *package){
+    char buf[MAX_MSG_LEN];
+    int length = 0;
+    length += snprintf(buf + length, MAX_MSG_LEN - length, "{ ttl:%d, type:%s, sender_id:%lu, seq_num:%d, link_entries[",package->ttl, package->type ? "ACK":"LSA", package->sender_id, package->seq_num);
+    int i;
+    for(i = 0; i < package->num_link_entries; i++){
+        length += snprintf(buf + length, MAX_MSG_LEN - length, "%lu,",package->link_entries[i]);
+    }  
+    length += snprintf(buf + length, MAX_MSG_LEN - length, "], user_entries[");
+    for(i = 0; i < package->num_user_entries; i++){
+        length += snprintf(buf + length, MAX_MSG_LEN - length, "%s,",package->user_entries[i]);
+    }    
+    length += snprintf(buf + length, MAX_MSG_LEN - length, "], channel_entries[");
+    for(i = 0; i < package->num_channel_entries; i++){
+        length += snprintf(buf + length, MAX_MSG_LEN - length, "%s,",package->channel_entries[i]);
+    }
+    length += snprintf(buf + length, MAX_MSG_LEN - length, "] }\n");
+
+    write_log(buf);
+}   

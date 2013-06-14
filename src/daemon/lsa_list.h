@@ -4,7 +4,9 @@
 #include "../common/csapp.h"
 #include "../common/rtlib.h"
 #include "../common/util.h"
+#include "../common/log.h"
 #include "routing_table.h"
+
 
 #define CONTINUE_FLOODING 	1
 #define DISCARD				0
@@ -43,5 +45,7 @@ int insert_LSA_list(LSA* new_package,LSA_list* LSA_to_send);
 void remove_LSA_list(LSA_list* LSA_entry);
 void delete_lsa_by_sender(unsigned long sender_id);
 u_long find_nodeID_by_nickname(char *nickname);
+
+void print_package_as_string(LSA *package);
 
 #endif /*__LSA_LIST_H__*/

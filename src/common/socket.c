@@ -7,6 +7,9 @@ extern u_long curr_nodeID;
 int init_unblocking_server_socket(int port){    
     /* Init server socket and set it as unblocked */
     int listenfd = Open_listenfd(port);
+    if(listenfd < 0){
+        unix_error("open listenfd failed\n");
+    }
     unblock_socket(listenfd);
 
     printf( "I am node %lu and I listen on port %d for new users\n", curr_nodeID, port);
