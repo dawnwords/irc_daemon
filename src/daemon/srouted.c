@@ -177,7 +177,7 @@ void retransmit_ack(int udp_fd){
     u_long retransmission_timeout = args.retransmission_timeout;
     long elapsed_time;
     cur_time = time(NULL);
-    for(cur_lsa_p = wait_header->next; cur_lsa_p != wait_header; cur_lsa_p = cur_lsa_p->next ){
+    for(cur_lsa_p = wait_header->next; cur_lsa_p != wait_footer; cur_lsa_p = cur_lsa_p->next ){
         elapsed_time = cur_time - cur_lsa_p->last_send;
         if(elapsed_time >= retransmission_timeout){
             rt_sendto(udp_fd, &cur_lsa_p->package, sizeof(LSA), 0, (SA *)&cur_lsa_p->target_addr, sizeof(struct sockaddr_in));
