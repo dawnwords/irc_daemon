@@ -85,13 +85,9 @@ int main( int argc, char *argv[] ) {
             write_log("time to advertise\n");
             broadcast_self(udp_fd);
         }
-
-        write_log("remove_expired_lsa_and_neighbor\n");
         //lsa_timeout & neighbor_timeout is up?
         remove_expired_lsa_and_neighbor(udp_fd);
 
-        write_log("retransmit_ack\n");
-        //retransmission_timeout is up?
         retransmit_ack(udp_fd);
 
         FD_SET(listen_server_fd,&read_set);
@@ -100,7 +96,6 @@ int main( int argc, char *argv[] ) {
             FD_SET(rio.rio_fd,&read_set);
         }
 
-        write_log("select\n");
         if( (nready = Select(maxfd+1, &read_set, NULL, NULL, &timeout)) < 0){
             unix_error("select error in srouted\n");
         }else if(nready > 0){

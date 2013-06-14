@@ -11,11 +11,13 @@ void init_log(){
     log_fp=fopen(log_buf,"w+");
 }
 
-void write_log(const char *format, ...){
-    va_list args;
-    va_start(args, format);
-    fprintf(log_fp, format, args);
-    va_end(args);
+void write_log(const char *form, ...){
+    va_list arg;   
+    char pbString[MAX_MSG_LEN];
+    va_start(arg,form);  
+    vsprintf(pbString,form,arg);
+    fprintf(log_fp,"%s",pbString);
+    va_end(arg);   
     fflush(log_fp);
 }
  
