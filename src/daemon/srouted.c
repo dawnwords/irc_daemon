@@ -257,12 +257,13 @@ void process_incoming_lsa(int udp_fd){
     /* receive a udp package from other daemon */
     rt_recvfrom(udp_fd, package_in,sizeof(LSA), 0, (struct sockaddr *)&cli_addr, (socklen_t *)&clilen);
     //debug
+    write_log("receive a lsa package\n");
     print_package_as_string(package_in);
 
     /* if the package is an ack */
     if(package_in->type){
         //debug
-        write_log("receive ack\n");
+        write_log("receive is a ack\n");
         remove_from_wait_ack_list(package_in, &cli_addr);
         write_log("after remove_from_wait_ack_list\n");
         return;
