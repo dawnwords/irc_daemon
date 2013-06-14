@@ -11,12 +11,15 @@ void init_wait_ack_list(){
 void printf_wait_list(){
 	int i = 0;
 	wait_ack_list* temp;
+	write_log("====================\n");
 	for (temp = wait_header->next; temp != wait_footer; temp = temp->next) {
-		write_log("wait_ack_list package %d:",i++);
+		write_log("wait_ack_list package %d:\n",i++);
+		write_log("target port:%d\n",ntohs(temp->target_addr.sin_port));
 		print_package_as_string(&temp->package);
 	}
 	if(!i)
 		write_log("wait_ack_list empty!\n");
+	write_log("====================\n");
 }
 
 void add_to_wait_ack_list(LSA* package,struct sockaddr_in *target_addr){
@@ -32,6 +35,7 @@ void add_to_wait_ack_list(LSA* package,struct sockaddr_in *target_addr){
 	wait_footer->prev->next = new_wait_ack;
 	wait_footer->prev = new_wait_ack;
 
+	write_log("add_to_wait_ack_list\n");
 	printf_wait_list();
 }
 
@@ -41,6 +45,7 @@ void remove_one_frome_wait_ack_list(wait_ack_list* wait_ack_node){
 		wait_ack_node->next->prev = wait_ack_node->prev;
 		Free(wait_ack_node);	
 	}
+	write_log("remove_from_wait_ack_list\n");
 	printf_wait_list();
 }
 
