@@ -107,7 +107,7 @@ int main( int argc, char *argv[] ) {
                 write_log("server connect at fd:%d, connect fd is %d\n",listen_server_fd, rio.rio_fd);
             }
             //new command from server INCOMMING_SERVER_CMD
-            if(rio.rio_fd && FD_ISSET(rio.rio_fd,&read_set)){
+            if(FD_ISSET(rio.rio_fd,&read_set)){
                 if(process_server_cmd(&rio,udp_fd)){
                     //debug
                     write_log("server EOF\n");
