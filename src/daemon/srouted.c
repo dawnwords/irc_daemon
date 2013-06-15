@@ -85,9 +85,11 @@ int main( int argc, char *argv[] ) {
             write_log("time to advertise\n");
             broadcast_self(udp_fd);
         }
-        //lsa_timeout & neighbor_timeout is up?
-        remove_expired_lsa_and_neighbor(udp_fd);
-
+        if(DEBUG){
+            //lsa_timeout & neighbor_timeout is up?
+            remove_expired_lsa_and_neighbor(udp_fd);
+        }
+        
         retransmit_ack(udp_fd);
 
         FD_ZERO(&read_set);
@@ -465,41 +467,41 @@ void handle_CHANTABLE(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MS
      * for our test script of finalcheckpoint/script.rb       *
      **********************************************************/
 
-    LSA_list* cur_lsa_sender_p;
-    for(cur_lsa_channel_p = lsa_header->next; cur_lsa_channel_p != lsa_footer; cur_lsa_channel_p = cur_lsa_channel_p->next){
-       if(cur_lsa_channel_p->package->sender_id != curr_nodeID){
-           package = cur_lsa_channel_p->package;
-           for( i = 0; i < package->num_channel_entries; i++){
-                channel_name = package->channel_entries[i];
-                for(cur_lsa_sender_p = lsa_header->next; cur_lsa_sender_p != lsa_footer; cur_lsa_sender_p = cur_lsa_sender_p->next){
-                    sourceID = cur_lsa_sender_p->package->sender_id;
-                    temp = insert_channel_cache_item(sourceID, channel_name);
-                    if(temp->channel_item.size){
-                        total_num_channel_item++;
-                        length += snprintf(buf + length, MAX_MSG_LEN - length, "%s %lu", channel_name, sourceID);
-                        for(j = 0; j < temp->channel_item.size; j++){   
-                            length += snprintf(buf + length, MAX_MSG_LEN - length, " %lu",temp->channel_item.next_hops[j] );
-                        }
-                        length += snprintf(buf + length, MAX_MSG_LEN - length, "\n");
-                    }
-                }
-            }
-        }
-    }
-
+    // LSA_list* cur_lsa_sender_p;
     // for(cur_lsa_channel_p = lsa_header->next; cur_lsa_channel_p != lsa_footer; cur_lsa_channel_p = cur_lsa_channel_p->next){
-    //    package = cur_lsa_channel_p->package;
-    //    for( i = 0; i < package->num_channel_entries; i++){
-    //         channel_name = package->channel_entries[i];                
-    //         sourceID = cur_lsa_channel_p->package->sender_id;
-    //         temp = insert_channel_cache_item(sourceID, channel_name);                
-    //         total_num_channel_item++;
-    //         length += snprintf(buf + length, MAX_MSG_LEN - length, "%s %lu", channel_name, sourceID);
-    //         for(j = 0; j < temp->channel_item.size; j++)
-    //             length += snprintf(buf + length, MAX_MSG_LEN - length, " %lu",temp->channel_item.next_hops[j] );
-    //         length += snprintf(buf + length, MAX_MSG_LEN - length, "\n");            
+    //    if(cur_lsa_channel_p->package->sender_id != curr_nodeID){
+    //        package = cur_lsa_channel_p->package;
+    //        for( i = 0; i < package->num_channel_entries; i++){
+    //             channel_name = package->channel_entries[i];
+    //             for(cur_lsa_sender_p = lsa_header->next; cur_lsa_sender_p != lsa_footer; cur_lsa_sender_p = cur_lsa_sender_p->next){
+    //                 sourceID = cur_lsa_sender_p->package->sender_id;
+    //                 temp = insert_channel_cache_item(sourceID, channel_name);
+    //                 if(temp->channel_item.size){
+    //                     total_num_channel_item++;
+    //                     length += snprintf(buf + length, MAX_MSG_LEN - length, "%s %lu", channel_name, sourceID);
+    //                     for(j = 0; j < temp->channel_item.size; j++){   
+    //                         length += snprintf(buf + length, MAX_MSG_LEN - length, " %lu",temp->channel_item.next_hops[j] );
+    //                     }
+    //                     length += snprintf(buf + length, MAX_MSG_LEN - length, "\n");
+    //                 }
+    //             }
+    //         }
     //     }
     // }
+
+    for(cur_lsa_channel_p = lsa_header->next; cur_lsa_channel_p != lsa_footer; cur_lsa_channel_p = cur_lsa_channel_p->next){
+       package = cur_lsa_channel_p->package;
+       for( i = 0; i < package->num_channel_entries; i++){
+            channel_name = package->channel_entries[i];                
+            sourceID = cur_lsa_channel_p->package->sender_id;
+            temp = insert_channel_cache_item(sourceID, channel_name);                
+            total_num_channel_item++;
+            length += snprintf(buf + length, MAX_MSG_LEN - length, "%s %lu", channel_name, sourceID);
+            for(j = 0; j < temp->channel_item.size; j++)
+                length += snprintf(buf + length, MAX_MSG_LEN - length, " %lu",temp->channel_item.next_hops[j] );
+            length += snprintf(buf + length, MAX_MSG_LEN - length, "\n");            
+        }
+    }
 
     tmp_length += snprintf(tmp_buf+tmp_length, MAX_MSG_LEN - tmp_length, "OK %d\n%s",total_num_channel_item,buf);
     reply(connfd, tmp_buf);
