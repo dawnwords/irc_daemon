@@ -174,7 +174,7 @@ void find_next_hop_with_distance(u_long cur,u_long dst,u_long* next_hop, int* di
 	routing_table *temp;
 	for(temp = confirmed_header->next;temp != confirmed_footer;temp = temp->next){
 		if(temp->dst_id == dst && temp->path[0] == cur){
-			*next_hop = length > 1 ? temp->path[1] : 0;
+			*next_hop = temp->length > 1 ? temp->path[1] : 0;
 			*distance = temp->length - 1;
 			return;
 		}
