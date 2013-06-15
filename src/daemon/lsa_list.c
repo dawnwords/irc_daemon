@@ -86,9 +86,8 @@ u_long find_nodeID_by_nickname(char *nickname){
 	return 0;
 }
 
-void print_package_as_string(LSA *package){
-    char buf[MAX_MSG_LEN];
-    int length = 0;
+void format_package(LSA *package, char *buf){
+	int length = 0;
     length += snprintf(buf + length, MAX_MSG_LEN - length, "{ ttl:%d, type:%s, sender_id:%lu, seq_num:%d, link_entries[",package->ttl, package->type ? "ACK":"LSA", package->sender_id, package->seq_num);
     int i;
     for(i = 0; i < package->num_link_entries; i++){
@@ -102,7 +101,26 @@ void print_package_as_string(LSA *package){
     for(i = 0; i < package->num_channel_entries; i++){
         length += snprintf(buf + length, MAX_MSG_LEN - length, "%s,",package->channel_entries[i]);
     }
-    length += snprintf(buf + length, MAX_MSG_LEN - length, "%s", "] }\n");
+    length += snprintf(buf + length, MAX_MSG_LEN - length, "%s", "] }");
+}
 
-    write_log(buf);
+void print_package_as_string(LSA *package){
+    char buf[MAX_MSG_LEN];
+    format_package(package, buf);
+    write_log("%s\n", buf);
+}
+
+void print_lsa_list(){ 
+	char buf[MAX_MSG_LEN];
+	char pack_buf[MAX_MSG_LEN];
+	int length = 0;
+	LSA_list *cur_list_p;
+	int i = 0;
+
+	for(cur_list_p = lsa_header->next; cur_list_p != lsa_footer; cur_list_p = cur_list_p->next){
+		i++;
+		format_package(cur_list_p->package,pack_buf);
+		length += snprintf(buf + length, MAX_MSG_LEN - length, "|[%s] %s| ",ctime(&cur_list_p->receive_time), pack_buf);
+	}
+	write_log("current lsa list (%d total num):%s", i, buf);
 }   
