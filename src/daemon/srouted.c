@@ -81,15 +81,12 @@ int main( int argc, char *argv[] ) {
         //advertise_cycle_time is up?
         if( is_time_to_advertise(&last_time) ){
             //debug
-            write_log("time to advertise:%lu\n",last_time);
+            write_log("time to advertise\n");
             broadcast_self(udp_fd);
         }
-
-        write_log("remove_expired_lsa_and_neighbor\n");
         //lsa_timeout & neighbor_timeout is up?
         remove_expired_lsa_and_neighbor(udp_fd);
 
-        write_log("retransmit_ack\n");
         retransmit_ack(udp_fd);
 
         FD_ZERO(&read_set);

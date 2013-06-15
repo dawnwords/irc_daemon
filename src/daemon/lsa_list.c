@@ -41,19 +41,21 @@ int insert_LSA_list(LSA* new_package,LSA** LSA_to_send){
 		}	
 	}else{
 		lsa = (LSA_list*) Calloc(1,sizeof(LSA_list));
+
+		lsa->prev = lsa_footer->prev;
+		lsa->next = lsa_footer;
+		lsa_footer->prev->next = lsa;
+		lsa_footer->prev = lsa;
+		
 		discard_tree();
-	} 
+	}
 	lsa->package = new_package;
 	lsa->receive_time = time(NULL);
-
-	lsa->prev = lsa_footer->prev;
-	lsa->next = lsa_footer;
-	lsa_footer->prev->next = lsa;
-	lsa_footer->prev = lsa;
 
 	if(LSA_to_send)
 		*LSA_to_send = lsa->package;
 
+	print_lsa_list();
 	return CONTINUE_FLOODING;		
 }
 
@@ -62,6 +64,7 @@ void remove_LSA_list(LSA_list* LSA_entry){
 	LSA_entry->next->prev = LSA_entry->prev;
 	free_LSA_list(LSA_entry);
 	discard_tree();
+	print_lsa_list();
 }
 
 void delete_lsa_by_sender(unsigned long sender_id){
@@ -111,16 +114,15 @@ void print_package_as_string(LSA *package){
 }
 
 void print_lsa_list(){ 
-	char buf[MAX_MSG_LEN];
 	char pack_buf[MAX_MSG_LEN];
-	int length = 0;
 	LSA_list *cur_list_p;
 	int i = 0;
 
+	write_log("*********lsa_list*********\n");
 	for(cur_list_p = lsa_header->next; cur_list_p != lsa_footer; cur_list_p = cur_list_p->next){
 		i++;
 		format_package(cur_list_p->package,pack_buf);
-		length += snprintf(buf + length, MAX_MSG_LEN - length, "|[%s] %s| ",ctime(&cur_list_p->receive_time), pack_buf);
+		write_log("%s|lsa_%d:%s|\n",ctime(&cur_list_p->receive_time),i,pack_buf);
 	}
-	write_log("current lsa list (%d total num):%s", i, buf);
+	write_log("**************************\n");
 }   

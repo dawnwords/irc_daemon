@@ -47,5 +47,6 @@ void delete_lsa_by_sender(unsigned long sender_id);
 u_long find_nodeID_by_nickname(char *nickname);
 
 void print_package_as_string(LSA *package);
+void print_lsa_list();
 
 #endif /*__LSA_LIST_H__*/
