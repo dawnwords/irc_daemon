@@ -100,9 +100,10 @@ int main( int argc, char *argv[] ) {
             //listen_server_fd selected, server ask for a tcp socket connection
             if( FD_ISSET(listen_server_fd,&read_set) ){
                 Rio_readinitb(&rio,Accept(listen_server_fd, (SA *)&clientaddr, &clientlen));
-                maxfd = maxfd > rio.rio_fd ? maxfd : rio.rio_fd;
+                if(maxfd < rio.rio_fd)
+                    maxfd = rio.rio_fd;
                 //debug
-                write_log("server connect at fd:%d, connect fd is %d\n",listen_server_fd, rio.rio_fd);
+                write_log("server connect at fd:%d, connect fd is %d, maxfd is %d\n",listen_server_fd, rio.rio_fd,maxfd);
             }
             //new command from server INCOMMING_SERVER_CMD
             if(FD_ISSET(rio.rio_fd,&read_set)){
