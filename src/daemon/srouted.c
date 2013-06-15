@@ -107,6 +107,7 @@ int main( int argc, char *argv[] ) {
             }
             //new command from server INCOMMING_SERVER_CMD
             if(FD_ISSET(rio.rio_fd,&read_set)){
+                write_log("server send cmd at fd:%d\n",rio.rio_fd);
                 if(process_server_cmd(&rio,udp_fd)){
                     //debug
                     write_log("server EOF\n");
@@ -128,21 +129,27 @@ int main( int argc, char *argv[] ) {
 
 void remove_expired_lsa_and_neighbor(int udp_fd){
     time_t cur_time;
-    LSA_list *cur_lsa_p;
+    LSA_list *cur_lsa_p = lsa_header->next;
     u_long lsa_timeout = args.lsa_timeout;
     u_long neighbor_timeout = args.neighbor_timeout;
     long elapsed_time;
 
     cur_time = time(NULL);
 
-    for(cur_lsa_p = lsa_header->next; cur_lsa_p != lsa_footer; cur_lsa_p = cur_lsa_p->next){
+    while(cur_lsa_p != lsa_footer){
         elapsed_time = cur_time - cur_lsa_p->receive_time;
-        if( cur_lsa_p->package->sender_id != curr_nodeID && elapsed_time >= lsa_timeout ){
-            remove_LSA_list(cur_lsa_p);      
-        }
-        if( elapsed_time >= neighbor_timeout && is_neighbor(cur_lsa_p->package->sender_id) ){
+        if(cur_lsa_p->package->sender_id == curr_nodeID ){
+            cur_lsa_p = cur_lsa_p->next;
+        }else if(elapsed_time >= neighbor_timeout && is_neighbor(cur_lsa_p->package->sender_id)){
             cur_lsa_p->package->ttl = 1;
             broadcast_neighbor(udp_fd, cur_lsa_p->package,NULL);
+            cur_lsa_p = cur_lsa_p->next;
+            remove_LSA_list(cur_lsa_p->prev);
+        }else if(elapsed_time >= lsa_timeout ){
+            cur_lsa_p = cur_lsa_p->next;
+            remove_LSA_list(cur_lsa_p->prev);
+        }else{
+            cur_lsa_p = cur_lsa_p->next;
         }
     }
 }
