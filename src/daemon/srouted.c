@@ -81,12 +81,15 @@ int main( int argc, char *argv[] ) {
         //advertise_cycle_time is up?
         if( is_time_to_advertise(&last_time) ){
             //debug
-            write_log("time to advertise\n");
+            write_log("time to advertise:%lu\n",last_time);
             broadcast_self(udp_fd);
         }
+
+        write_log("remove_expired_lsa_and_neighbor\n");
         //lsa_timeout & neighbor_timeout is up?
         remove_expired_lsa_and_neighbor(udp_fd);
 
+        write_log("retransmit_ack\n");
         retransmit_ack(udp_fd);
 
         FD_ZERO(&read_set);
@@ -119,7 +122,10 @@ int main( int argc, char *argv[] ) {
             }
             //LSA from daemon INCOMMING_ADVERTISEMENT
             if(FD_ISSET(udp_fd,&read_set)){
-                process_incoming_lsa(udp_fd);
+                //debug
+                write_log("@@@@ process_incoming_lsa @@@@\n");
+                process_incoming_lsa(udp_fd);                
+                write_log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             }
         }
     }
@@ -243,9 +249,6 @@ void init_self_lsa(){
 }
 
 void process_incoming_lsa(int udp_fd){
-    //debug
-    write_log("process_incoming_lsa\n");
-
     LSA* package_in = (LSA*) Calloc(1,sizeof(LSA));
     struct sockaddr_in cli_addr;
     socklen_t clilen = sizeof(cli_addr);
@@ -312,7 +315,7 @@ void process_incoming_lsa(int udp_fd){
             write_log("SEND_BACK\n");
             send_to(udp_fd,LSA_to_send, &cli_addr);
             break;
-    }   
+    }
 }
 
 int process_server_cmd(rio_t* rio, int udp_fd){
