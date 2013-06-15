@@ -30,10 +30,12 @@ channel_cache_list_t * insert_channel_cache_item(u_long source_id,char *channeln
 
 	LSA_list* temp;
 	int i;
+	u_long next_hop;
 	for(temp = lsa_header->next;temp != lsa_footer; temp = temp->next){
 		for(i = 0;i < temp->num_channel_entries;i++){
 			if(!strcmp(temp->channel_entries[i],channelname)){
-				channel_cache_item_p->next_hops[channel_cache_item_p->length++] = find_next_hop(source_id,temp->sender_id,curr_nodeID);
+				if((next_hop = find_next_hop(source_id,temp->sender_id,curr_nodeID))
+					channel_cache_item_p->next_hops[channel_cache_item_p->length++] = next_hop;
 				break;
 			}
 		}
