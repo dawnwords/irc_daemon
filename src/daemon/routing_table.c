@@ -18,6 +18,7 @@ void init_routing_table(){
 void print_routing_table(){
 	routing_table *temp;
 	int i;
+	write_log("$$$$$$$$$$ routing_table $$$$$$$$$$\n");	
 	for(temp = confirmed_header->next;temp != confirmed_footer;temp = temp->next){
 		write_log("dst:%lu path[%d]:",temp->dst_id,temp->length);
 		for(i = 0;i < temp->length;i++){
@@ -27,6 +28,7 @@ void print_routing_table(){
 				write_log("%lu\n",temp->path[i]);
 		}
 	}
+	write_log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
 }
 
 routing_table *insert_before_routing_table(u_long dst_id,int length,u_long path[32],routing_table *element){
@@ -104,7 +106,7 @@ int has_built(u_long src){
 
 void build_shortest_path_tree(u_long src){
 	/* if the tree starting at src has not been built, start dijkstra algorithm */
-	if(has_built(src)){		
+	if(!has_built(src)){		
 		routing_table *next, *tentative_entry;
 		LSA_list* lsa;
 		int i, j, new_len;
@@ -165,6 +167,8 @@ u_long find_next_hop(u_long src,u_long dst,u_long cur){
 void find_next_hop_with_distance(u_long cur,u_long dst,u_long* next_hop, int* distance){
 	build_shortest_path_tree(cur);
 
+	print_routing_table();
+
 	/* traverse to find next hop and distance to dst*/	
 	routing_table *temp;
 	for(temp = confirmed_header->next;temp != confirmed_footer;temp = temp->next){
@@ -174,8 +178,6 @@ void find_next_hop_with_distance(u_long cur,u_long dst,u_long* next_hop, int* di
 			return;
 		}
 	}
-
-	print_routing_table();
 
 	*next_hop = 0;
 }
