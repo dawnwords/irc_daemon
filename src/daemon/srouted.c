@@ -42,7 +42,7 @@ void (*handler[])(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LE
 
 /* Main */
 int main( int argc, char *argv[] ) {
-    int listen_server_fd, udp_fd, nready,maxfd;
+    int listen_server_fd, udp_fd, maxfd;
     fd_set read_set;
     struct timeval timeout;
     struct sockaddr_in clientaddr;
@@ -95,10 +95,8 @@ int main( int argc, char *argv[] ) {
         if(rio.rio_fd){
             FD_SET(rio.rio_fd,&read_set);
         }
-
-        if( (nready = Select(maxfd+1, &read_set, NULL, NULL, &timeout)) < 0){
-            unix_error("select error in srouted\n");
-        }else if(nready > 0){
+        
+        if(Select(maxfd+1, &read_set, NULL, NULL, &timeout) > 0){
             //listen_server_fd selected, server ask for a tcp socket connection
             if( FD_ISSET(listen_server_fd,&read_set) ){
                 Rio_readinitb(&rio,Accept(listen_server_fd, (SA *)&clientaddr, &clientlen));
