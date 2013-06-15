@@ -329,8 +329,8 @@ afile.each_line do |line|
 	line.chomp!
 	(nodeid, ip, lport, dport, sport)=line.split
 	if(nodeid.to_i == id)  # dont forget to convert to int
-		puts "./srouted -i #{id} -c #{file} -a 1 &"
-	        system("./srouted -i #{id} -c #{file} -a 1 &")
+		puts "./srouted -i #{id} -c #{file} -a 3 &"
+	        system("./srouted -i #{id} -c #{file} -a 3 &")
 		return 1 
 	end
 end

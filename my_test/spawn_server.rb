@@ -344,6 +344,7 @@ afile.each_line do |line|
 	if(nodeid.to_i == id)  # dont forget to convert to int
 		rdaemon = RDAEMON.new(ip, dport.to_i, '', '')
 		rdaemon.connect()
+		puts "server#{id} connect"
 		return rdaemon 
 	end
 end
@@ -401,8 +402,11 @@ begin
 # puts "Connecting to the daemons..."
 # # Now connect a TCP socket to the daemons
 rdaemon1 = conn_daemon("cp4node1.conf", 1)
+sleep(1)
 rdaemon2 = conn_daemon("cp4node2.conf", 2)
+sleep(1)
 rdaemon3 = conn_daemon("cp4node3.conf", 3)
+sleep(1)
 rdaemon4 = conn_daemon("cp4node4.conf", 4)
 
 # puts "Sleeping for 5 seconds to let everything settle."
@@ -412,8 +416,8 @@ sleep(1000)
 # # I am going to add a user on node1 and node4,
 # # then test the USERTABLE response at 2 and 3
 # 	tn = test_name("USERTABLE @ Node 2")
-#   rdaemon2.adduser("gnychis")
-# 	rdaemon1.ignore_reply()
+rdaemon2.adduser("gnychis")
+rdaemon2.ignore_reply()
 # 	rdaemon4.adduser("dga")
 # 	rdaemon4.ignore_reply()
 # 	eval_test(tn, nil, nil, rdaemon2.usertablet1())
