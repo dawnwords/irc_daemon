@@ -13,6 +13,7 @@
 #include "wait_ack_list.h"
 #include "user_cache.h"
 #include <stdarg.h>
+#include "channel_cache.h"
 
 typedef struct user_struct{
 	char name[MAX_NAME_LENGTH];	

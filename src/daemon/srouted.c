@@ -72,6 +72,7 @@ int main( int argc, char *argv[] ) {
     init_user_cache();
     init_routing_table();
     init_self_lsa();
+    init_channel_cache();
 
 
     maxfd = listen_server_fd > udp_fd ? listen_server_fd:udp_fd;
@@ -405,7 +406,17 @@ void handle_ADDCHAN(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_
 }
 
 void handle_REMOVECHAN(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
+    int i;
+    for(i = 0; i < self_lsa.num_channel_entries; i++){
+        if(!strcmp(self_lsa.channel_entries[i],tokens[1])){
+            strncpy(self_lsa.channel_entries[i], 
+                self_lsa.channel_entries[--self_lsa.num_channel_entries], 
+                MAX_NAME_LENGTH);
+            break;
+        }
+    }
     reply(connfd,"OK");
+    broadcast_self(udp_fd);
 }
 
 void handle_USERTABLE(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
@@ -453,6 +464,16 @@ void handle_NEXTHOP(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_
 }
 
 void handle_NEXTHOPS(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
-    reply(connfd,"OK");   
+    u_long sourceID = strtoul(tokens[1],NULL,10);
+    char *channel_name = tokens[2];
+    channel_cache_list_t *channel_cache_list_p;
+    
+    channel_cache_list_p = insert_channel_cache_item(sourceID, channel_name);
+
+    if(channel_cache_list_p->next_hops[0]){
+
+    }else{
+        
+    }
 }
 
