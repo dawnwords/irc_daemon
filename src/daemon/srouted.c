@@ -399,7 +399,9 @@ void handle_REMOVEUSER(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_M
 }
 
 void handle_ADDCHAN(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
+    strncpy(self_lsa.channel_entries[self_lsa.num_channel_entries++],tokens[1],MAX_NAME_LENGTH);
     reply(connfd,"OK");
+    broadcast_self(udp_fd);
 }
 
 void handle_REMOVECHAN(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
