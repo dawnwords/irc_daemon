@@ -2,8 +2,8 @@
 #define __WAITING_ACK_LIST_H__
 
 #include "../common/csapp.h"
-#include "lsa_list.h"
 #include "../common/log.h"
+#include "lsa_list.h"
 
 typedef struct ack_list_struct{
 	time_t last_send;

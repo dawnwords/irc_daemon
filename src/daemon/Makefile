@@ -54,7 +54,7 @@ channel_cache.o: channel_cache.c channel_cache.h
 user_cache.o: user_cache.c user_cache.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-routing_table.o: routing_table.c routing_table.h
+routing_table.o: routing_table.c routing_table.h user_cache.h
 	$(CC) $(CFLAGS) -c -o $@ $<		
 
 %.o: %.c

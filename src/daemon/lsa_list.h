@@ -7,7 +7,6 @@
 #include "../common/log.h"
 #include "routing_table.h"
 
-
 #define CONTINUE_FLOODING 	1
 #define DISCARD				0
 #define SEND_BACK			-1

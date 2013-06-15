@@ -33,7 +33,6 @@ void discard_user_cache(){
 
 	user_cache_header->next = user_cache_footer;
 	user_cache_footer->prev = user_cache_header;
-
 }
 
 user_cache_list_t * find_user_cache_item(char *nickname) {

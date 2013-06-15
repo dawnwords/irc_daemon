@@ -1,5 +1,5 @@
 #include "routing_table.h"
-
+#include "user_cache.h"
 routing_table *confirmed_header,*confirmed_footer, *tentative_header, *tentative_footer;
 
 
@@ -64,6 +64,7 @@ void discard_tree(){
 	}
 	confirmed_header->next = confirmed_footer;
     confirmed_footer->prev = confirmed_header;
+    discard_user_cache();
 }
 
 routing_table *find_in_confirmed(u_long src,u_long dst){

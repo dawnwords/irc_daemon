@@ -442,7 +442,7 @@ void handle_NEXTHOP(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_
     user_cache_list_t * temp = insert_user_cache_item(nickname);
     int length = 0;
     char buf[MAX_MSG_LEN];
-    if(temp->next_hop){
+    if(temp->user_item.next_hop){
         length += snprintf(buf + length, MAX_MSG_LEN - length, "OK %lu %d\n",temp->user_item.next_hop, temp->user_item.distance);
     }else{
         length += snprintf(buf + length, MAX_MSG_LEN - length, "NONE\n");
