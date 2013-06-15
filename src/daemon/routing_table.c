@@ -1,18 +1,32 @@
 #include "routing_table.h"
 
-routing_table *routing_header,*routing_footer, *tentative_header, *tentative_footer;
+routing_table *confirmed_header,*confirmed_footer, *tentative_header, *tentative_footer;
 
 
 void init_routing_table(){
-    routing_header = (routing_table*) Calloc(1,sizeof(routing_table));
-    routing_footer = (routing_table*) Calloc(1,sizeof(routing_table));
-    routing_header->next = routing_footer;
-    routing_footer->prev = routing_header;
+    confirmed_header = (routing_table*) Calloc(1,sizeof(routing_table));
+    confirmed_footer = (routing_table*) Calloc(1,sizeof(routing_table));
+    confirmed_header->next = confirmed_footer;
+    confirmed_footer->prev = confirmed_header;
 
     tentative_header = (routing_table*) Calloc(1,sizeof(routing_table));
     tentative_footer = (routing_table*) Calloc(1,sizeof(routing_table));
     tentative_header->next = tentative_footer;
     tentative_footer->prev = tentative_header;    
+}
+
+void print_routing_table(){
+	routing_table *temp;
+	int i;
+	for(temp = confirmed_header->next;temp != confirmed_footer;temp = temp->next){
+		write_log("dst:%lu path[%d]:",temp->dst_id,temp->length);
+		for(i = 0;i < temp->length;i++){
+			if(i != temp->length - 1)
+				write_log("%lu -> ",temp->path[i]);
+			else
+				write_log("%lu\n",temp->path[i]);
+		}
+	}
 }
 
 routing_table *insert_before_routing_table(u_long dst_id,int length,u_long path[32],routing_table *element){
@@ -41,18 +55,18 @@ void delete_routing_table(routing_table *element){
 }
 
 void discard_tree(){
-	routing_table *temp = routing_header->next;
-	while(temp != routing_footer){
+	routing_table *temp = confirmed_header->next;
+	while(temp != confirmed_footer){
 		temp = temp->next;
 		Free(temp->prev);
 	}
-	routing_header->next = routing_footer;
-    routing_footer->prev = routing_header;
+	confirmed_header->next = confirmed_footer;
+    confirmed_footer->prev = confirmed_header;
 }
 
 routing_table *find_in_confirmed(u_long src,u_long dst){
 	routing_table *temp;
-	for(temp = routing_header->next;temp != routing_footer;temp = temp->next)
+	for(temp = confirmed_header->next;temp != confirmed_footer;temp = temp->next)
 		if(temp->dst_id == dst && temp->path[0] == src)
 			return temp;
 	return NULL;
@@ -82,7 +96,7 @@ routing_table *find_min_length_in_tentative(){
 
 int has_built(u_long src){
 	routing_table *temp;
-	for(temp = routing_header->next;temp != routing_footer;temp = temp->next)
+	for(temp = confirmed_header->next;temp != confirmed_footer;temp = temp->next)
 		if(temp->path[0] == src)
 			return 1;	
 	return 0;
@@ -99,7 +113,7 @@ void build_shortest_path_tree(u_long src){
 		// 1) 2) set next as src
 		u_long path[32];
 		path[0] = src;
-		next = insert_before_routing_table(src,1,path,routing_footer);
+		next = insert_before_routing_table(src,1,path,confirmed_footer);
 
 		while(1){
 			// 3) for all neighbors
@@ -126,7 +140,7 @@ void build_shortest_path_tree(u_long src){
 			// else add min-length entry to confirmed
 			else{
 				tentative_entry = find_min_length_in_tentative();
-				next = insert_before_routing_table(tentative_entry->dst_id,tentative_entry->length, tentative_entry->path,routing_footer);
+				next = insert_before_routing_table(tentative_entry->dst_id,tentative_entry->length, tentative_entry->path,confirmed_footer);
 				delete_routing_table(tentative_entry);
 			}
 		}
@@ -139,7 +153,7 @@ u_long find_next_hop(u_long src,u_long dst,u_long cur){
 	/* traverse to find next hop to dst*/
 	routing_table *temp;
 	int i;
-	for(temp = routing_header->next;temp != routing_footer;temp = temp->next)
+	for(temp = confirmed_header->next;temp != confirmed_footer;temp = temp->next)
 		if(temp->dst_id == dst && temp->path[0] == src)
 			for(i = 0;i < temp->length;i++)
 				if(temp->path[i] == cur)
@@ -153,13 +167,15 @@ void find_next_hop_with_distance(u_long cur,u_long dst,u_long* next_hop, int* di
 
 	/* traverse to find next hop and distance to dst*/	
 	routing_table *temp;
-	for(temp = routing_header->next;temp != routing_footer;temp = temp->next){
+	for(temp = confirmed_header->next;temp != confirmed_footer;temp = temp->next){
 		if(temp->dst_id == dst && temp->path[0] == cur){
 			*next_hop = temp->path[1];
 			*distance = temp->length - 1;
 			return;
 		}
 	}
+
+	print_routing_table();
 
 	*next_hop = 0;
 }

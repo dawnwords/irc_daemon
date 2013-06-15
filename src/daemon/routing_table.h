@@ -2,6 +2,7 @@
 #define __ROUTING_TABLE_H__
 
 #include "lsa_list.h"
+#include "../common/log.h"
 
 typedef struct routing_table_struct{
 	u_long dst_id;

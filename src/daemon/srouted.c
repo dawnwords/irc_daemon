@@ -352,6 +352,7 @@ int is_time_to_advertise(time_t *last_time){
 void reply(int connfd, char const * const message){
     char reply[MAX_MSG_LEN];
     sprintf(reply, "%s\n", message);
+    write_log("reply to server:%s\n",message);
     Rio_writen(connfd,reply, strlen(reply));
 }
 
