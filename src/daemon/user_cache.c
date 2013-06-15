@@ -12,7 +12,7 @@ void init_user_cache(){
 }
 
 user_cache_list_t * insert_user_cache_item(char *nickname){
-	user_cache_list_t *user_cache_item_p;
+	user_cache_list_t *user_cache_item_p = NULL ;
 	u_long dest;
 	if(!(user_cache_item_p = find_user_cache_item(nickname))){
 		user_cache_item_p = (user_cache_list_t *)Calloc(1,sizeof(user_cache_list_t));
