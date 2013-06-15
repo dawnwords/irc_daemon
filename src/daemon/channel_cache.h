@@ -18,8 +18,8 @@ typedef struct channel_cache_list {
 } channel_cache_list_t;
 
 void init_channel_cache();
-channel_cache_list_t * insert_channel_cache_item(char *channelname);
+channel_cache_list_t * insert_channel_cache_item(u_long sourceID, char *channelname);
 void discard_channel_cache();
-channel_cache_list_t * find_channel_cache_item(char *channelname);
+channel_cache_list_t * find_channel_cache_item(u_long sourceID, char *channelname);
 
 #endif
