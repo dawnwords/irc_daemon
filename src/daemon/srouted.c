@@ -302,7 +302,7 @@ void process_incoming_lsa(int udp_fd){
     LSA* LSA_to_send = NULL;
     switch(insert_LSA_list(package_in,&LSA_to_send)){
         case CONTINUE_FLOODING:            
-            write_log("CONTINUE_FLOODING LSA_to_send:%p\n",LSA_to_send);
+            write_log("CONTINUE_FLOODING\n");
             print_package_as_string(package_in);
             broadcast_neighbor(udp_fd,LSA_to_send, &cli_addr);            
             break;
@@ -447,7 +447,7 @@ void handle_USERTABLE(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MS
 }
 
 void handle_CHANTABLE(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
-    LSA_list *cur_lsa_channel_p, *cur_lsa_sender_p;
+    LSA_list *cur_lsa_channel_p;
     int i,j;
     int total_num_channel_item = 0;
     int length = 0;
@@ -459,6 +459,13 @@ void handle_CHANTABLE(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MS
     LSA *package;
     u_long sourceID;
 
+    /**********************************************************
+     * another version for CHANTABLE implementation which     *
+     * satisfies the requirements in IRC_REF but not suitable *
+     * for our test script of finalcheckpoint/script.rb       *
+     **********************************************************/
+
+    LSA_list* cur_lsa_sender_p;
     for(cur_lsa_channel_p = lsa_header->next; cur_lsa_channel_p != lsa_footer; cur_lsa_channel_p = cur_lsa_channel_p->next){
        if(cur_lsa_channel_p->package->sender_id != curr_nodeID){
            package = cur_lsa_channel_p->package;
@@ -479,6 +486,20 @@ void handle_CHANTABLE(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MS
             }
         }
     }
+
+    // for(cur_lsa_channel_p = lsa_header->next; cur_lsa_channel_p != lsa_footer; cur_lsa_channel_p = cur_lsa_channel_p->next){
+    //    package = cur_lsa_channel_p->package;
+    //    for( i = 0; i < package->num_channel_entries; i++){
+    //         channel_name = package->channel_entries[i];                
+    //         sourceID = cur_lsa_channel_p->package->sender_id;
+    //         temp = insert_channel_cache_item(sourceID, channel_name);                
+    //         total_num_channel_item++;
+    //         length += snprintf(buf + length, MAX_MSG_LEN - length, "%s %lu", channel_name, sourceID);
+    //         for(j = 0; j < temp->channel_item.size; j++)
+    //             length += snprintf(buf + length, MAX_MSG_LEN - length, " %lu",temp->channel_item.next_hops[j] );
+    //         length += snprintf(buf + length, MAX_MSG_LEN - length, "\n");            
+    //     }
+    // }
 
     tmp_length += snprintf(tmp_buf+tmp_length, MAX_MSG_LEN - tmp_length, "OK %d\n%s",total_num_channel_item,buf);
     reply(connfd, tmp_buf);

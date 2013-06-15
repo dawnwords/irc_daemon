@@ -9,17 +9,19 @@ void init_wait_ack_list(){
     wait_footer->prev = wait_header;   
 }
 void printf_wait_list(){
-	int i = 0;
-	wait_ack_list* temp;
-	write_log("====================\n");
-	for (temp = wait_header->next; temp != wait_footer; temp = temp->next) {
-		write_log("wait_ack_list package %d:\n",i++);
-		write_log("target port:%d\n",ntohs(temp->target_addr.sin_port));
-		print_package_as_string(&temp->package);
+	if(DEBUG){
+		int i = 0;
+		wait_ack_list* temp;
+		write_log("====================\n");
+		for (temp = wait_header->next; temp != wait_footer; temp = temp->next) {
+			write_log("wait_ack_list package %d:\n",i++);
+			write_log("target port:%d\n",ntohs(temp->target_addr.sin_port));
+			print_package_as_string(&temp->package);
+		}
+		if(!i)
+			write_log("wait_ack_list empty!\n");
+		write_log("====================\n");	
 	}
-	if(!i)
-		write_log("wait_ack_list empty!\n");
-	write_log("====================\n");
 }
 
 wait_ack_list* find_wait_ack_node(LSA const *package,struct sockaddr_in const *target_addr){

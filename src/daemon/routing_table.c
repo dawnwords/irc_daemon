@@ -16,19 +16,21 @@ void init_routing_table(){
 }
 
 void print_routing_table(){
-	routing_table *temp;
-	int i;
-	write_log("$$$$$$$$$$ routing_table $$$$$$$$$$\n");	
-	for(temp = confirmed_header->next;temp != confirmed_footer;temp = temp->next){
-		write_log("dst:%lu path[%d]:",temp->dst_id,temp->length);
-		for(i = 0;i < temp->length;i++){
-			if(i != temp->length - 1)
-				write_log("%lu -> ",temp->path[i]);
-			else
-				write_log("%lu\n",temp->path[i]);
+	if(DEBUG){		
+		routing_table *temp;
+		int i;
+		write_log("$$$$$$$$$$ routing_table $$$$$$$$$$\n");	
+		for(temp = confirmed_header->next;temp != confirmed_footer;temp = temp->next){
+			write_log("dst:%lu path[%d]:",temp->dst_id,temp->length);
+			for(i = 0;i < temp->length;i++){
+				if(i != temp->length - 1)
+					write_log("%lu -> ",temp->path[i]);
+				else
+					write_log("%lu\n",temp->path[i]);
+			}
 		}
+		write_log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");	
 	}
-	write_log("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n");
 }
 
 routing_table *insert_before_routing_table(u_long dst_id,int length,u_long path[32],routing_table *element){

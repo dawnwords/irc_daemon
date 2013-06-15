@@ -108,21 +108,25 @@ void format_package(LSA *package, char *buf){
 }
 
 void print_package_as_string(LSA *package){
-    char buf[MAX_MSG_LEN];
-    format_package(package, buf);
-    write_log("%s\n", buf);
+	if(DEBUG){
+	    char buf[MAX_MSG_LEN];
+	    format_package(package, buf);
+	    write_log("%s\n", buf);	
+	}
 }
 
 void print_lsa_list(){ 
-	char pack_buf[MAX_MSG_LEN];
-	LSA_list *cur_list_p;
-	int i = 0;
+	if(DEBUG){		
+		char pack_buf[MAX_MSG_LEN];
+		LSA_list *cur_list_p;
+		int i = 0;
 
-	write_log("*********lsa_list*********\n");
-	for(cur_list_p = lsa_header->next; cur_list_p != lsa_footer; cur_list_p = cur_list_p->next){
-		i++;
-		format_package(cur_list_p->package,pack_buf);
-		write_log("%s|lsa_%d:%s|\n",ctime(&cur_list_p->receive_time),i,pack_buf);
+		write_log("*********lsa_list*********\n");
+		for(cur_list_p = lsa_header->next; cur_list_p != lsa_footer; cur_list_p = cur_list_p->next){
+			i++;
+			format_package(cur_list_p->package,pack_buf);
+			write_log("%s|lsa_%d:%s|\n",ctime(&cur_list_p->receive_time),i,pack_buf);
+		}
+		write_log("**************************\n");	
 	}
-	write_log("**************************\n");
 }   
