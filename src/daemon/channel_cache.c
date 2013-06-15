@@ -15,7 +15,7 @@ void init_channel_cache(){
 channel_cache_list_t *find_channel_cache_item(u_long source_id,char *channelname){
 	channel_cache_list_t *temp;
 	for(temp = channel_cache_header->next;temp != channel_cache_footer;temp = temp->next)
-		if(temp->source_id == source_id && !strcmp(channelname,temp->channelname))
+		if(temp->channel_item.source_id == source_id && !strcmp(channelname,temp->channel_item.channelname))
 			return temp;
 	return NULL;
 }
@@ -32,10 +32,10 @@ channel_cache_list_t * insert_channel_cache_item(u_long source_id,char *channeln
 	int i;
 	u_long next_hop;
 	for(temp = lsa_header->next;temp != lsa_footer; temp = temp->next){
-		for(i = 0;i < temp->num_channel_entries;i++){
-			if(!strcmp(temp->channel_entries[i],channelname)){
-				if((next_hop = find_next_hop(source_id,temp->sender_id,curr_nodeID))
-					channel_cache_item_p->next_hops[channel_cache_item_p->length++] = next_hop;
+		for(i = 0;i < temp->package->num_channel_entries;i++){
+			if(!strcmp(temp->package->channel_entries[i],channelname)){
+				if((next_hop = find_next_hop(source_id,temp->package->sender_id,curr_nodeID)))
+					channel_cache_item_p->channel_item.next_hops[channel_cache_item_p->channel_item.size++] = next_hop;
 				break;
 			}
 		}

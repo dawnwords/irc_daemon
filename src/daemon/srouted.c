@@ -466,7 +466,7 @@ void handle_CHANTABLE(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MS
             for(cur_lsa_sender_p = lsa_header->next; cur_lsa_sender_p != lsa_footer; cur_lsa_sender_p = cur_lsa_sender_p->next){
                 sourceID = cur_lsa_sender_p->package->sender_id;
                 temp = insert_channel_cache_item(sourceID, channel_name);
-                if(temp->channel_item.next_hops[0]){
+                if(temp->channel_item.size){
                     total_num_channel_item++;
                     length += snprintf(buf + length, MAX_MSG_LEN - length, "%s %lu", channel_name, sourceID);
                     for(j = 0; j < temp->channel_item.size; j++){   
@@ -507,7 +507,7 @@ void handle_NEXTHOPS(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG
 
     channel_cache_list_p = insert_channel_cache_item(sourceID, channel_name);
 
-    if(channel_cache_list_p->channel_item.next_hops[0]){
+    if(channel_cache_list_p->channel_item.size){
         channel_cache_item_t channel_item = channel_cache_list_p->channel_item;
         length += snprintf(buf + length, MAX_MSG_LEN - length, "OK");
         for( i = 0; i < channel_cache_list_p->channel_item.size; i ++){
