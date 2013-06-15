@@ -8,11 +8,12 @@
 typedef struct channel_cache_item {
 	char channelname[MAX_NAME_LENGTH];
 	u_long source_id;
+	int size;
 	u_long next_hops[MAX_LINK_ENTRIES];
 } channel_cache_item_t;
 
 typedef struct channel_cache_list {
-	channel_cache_item_t user_item;
+	channel_cache_item_t channel_item;
 	struct channel_cache_list *prev;
 	struct channel_cache_list *next;
 } channel_cache_list_t;
