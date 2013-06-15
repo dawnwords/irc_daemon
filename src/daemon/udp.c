@@ -30,8 +30,6 @@ int send_to(int udp_sock, LSA *package_to_send,struct sockaddr_in *target_addrp)
         printf("%s\n", strerror(errno));
         return error;
     }
-    write_log("in send_to:rt_sendto return success,package to add to wait ack list is:\n");
-    print_package_as_string(package_to_send);
     package_to_send->ttl++;
     add_to_wait_ack_list(package_to_send, target_addrp);
     return error;

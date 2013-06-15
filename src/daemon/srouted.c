@@ -81,12 +81,15 @@ int main( int argc, char *argv[] ) {
         //advertise_cycle_time is up?
         if( is_time_to_advertise(&last_time) ){
             //debug
-            write_log("time to advertise\n");
+            write_log("time to advertise:%lu\n",last_time);
             broadcast_self(udp_fd);
         }
+
+        write_log("remove_expired_lsa_and_neighbor\n");
         //lsa_timeout & neighbor_timeout is up?
         remove_expired_lsa_and_neighbor(udp_fd);
 
+        write_log("retransmit_ack\n");
         retransmit_ack(udp_fd);
 
         FD_ZERO(&read_set);
@@ -119,7 +122,10 @@ int main( int argc, char *argv[] ) {
             }
             //LSA from daemon INCOMMING_ADVERTISEMENT
             if(FD_ISSET(udp_fd,&read_set)){
-                process_incoming_lsa(udp_fd);
+                //debug
+                write_log("@@@@ process_incoming_lsa @@@@\n");
+                process_incoming_lsa(udp_fd);                
+                write_log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
             }
         }
     }
@@ -183,21 +189,31 @@ void retransmit_ack(int udp_fd){
 void broadcast_neighbor( int udp_sock, LSA *package_to_broadcast, struct sockaddr_in *except_addr){
     int i;
     struct sockaddr_in target_addr;
-    int result;
+    int size = curr_node_config_file.size;
+    rt_config_entry_t temp;
 
     //debug log
     write_log("+++++ broadcast_neighbor\n");
     write_log("num_link_entries is %d\n",self_lsa.num_link_entries);
-    for(i = 0; i < self_lsa.num_link_entries; i++){
-        result = get_addr_by_nodeID(self_lsa.link_entries[i],&target_addr);
-        if(result && !equal_addr(&target_addr,except_addr)){
-            //debug
-            write_log("address to send is ip:%s port:%d\n",inet_ntoa(target_addr.sin_addr), ntohs(target_addr.sin_port));
-            write_log("package to send is\n");            
-            print_package_as_string(package_to_broadcast);
-            send_to(udp_sock, package_to_broadcast, &target_addr);
-        }
+
+    for(i = 0; i < size; i++){
+        temp = curr_node_config_file.entries[i];
+        if(temp.nodeID != curr_nodeID){
+            bzero(&target_addr, sizeof(struct sockaddr_in));
+            target_addr.sin_family = AF_INET;
+            target_addr.sin_port = htons((unsigned short)temp.routing_port);
+            target_addr.sin_addr.s_addr = htonl(temp.ipaddr);
+
+            if(!equal_addr(&target_addr,except_addr)){
+                //debug
+                write_log("address to send is ip:%s port:%d\n",inet_ntoa(target_addr.sin_addr), ntohs(target_addr.sin_port));
+                write_log("package to send is\n");            
+                print_package_as_string(package_to_broadcast);
+                send_to(udp_sock, package_to_broadcast, &target_addr);
+            }
+        }  
     }
+
     //debug log
     write_log("----- end broadcast_neighbor\n");
 }
@@ -207,24 +223,6 @@ void broadcast_self(int udp_fd){
     write_log("broadcast_self\n");
     broadcast_neighbor(udp_fd,&self_lsa,NULL);
 }
-
-int get_addr_by_nodeID(u_long nodeID, struct sockaddr_in *target_addr){
-    int i;
-    int size = curr_node_config_file.size;
-    rt_config_entry_t temp;
-    for (i = 0; i < size; i++){
-        temp = curr_node_config_file.entries[i];
-        if(nodeID == temp.nodeID){
-            bzero((char *)target_addr, sizeof(struct sockaddr_in));
-            target_addr->sin_family = AF_INET;
-            target_addr->sin_port = htons((unsigned short)temp.routing_port);
-            target_addr->sin_addr.s_addr = htonl(temp.ipaddr);
-            return 1;
-        }
-    }
-    return 0;
-}
-
 
 void init_self_lsa(){
     int i,j;
@@ -251,9 +249,6 @@ void init_self_lsa(){
 }
 
 void process_incoming_lsa(int udp_fd){
-    //debug
-    write_log("process_incoming_lsa\n");
-
     LSA* package_in = (LSA*) Calloc(1,sizeof(LSA));
     struct sockaddr_in cli_addr;
     socklen_t clilen = sizeof(cli_addr);
@@ -320,7 +315,7 @@ void process_incoming_lsa(int udp_fd){
             write_log("SEND_BACK\n");
             send_to(udp_fd,LSA_to_send, &cli_addr);
             break;
-    }   
+    }
 }
 
 int process_server_cmd(rio_t* rio, int udp_fd){
