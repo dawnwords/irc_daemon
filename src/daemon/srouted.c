@@ -447,7 +447,39 @@ void handle_USERTABLE(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MS
 }
 
 void handle_CHANTABLE(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
-    reply(connfd,"OK 0");
+    LSA_list *cur_lsa_channel_p, *cur_lsa_sender_p;
+    int i,j;
+    int total_num_channel_item = 0;
+    int length = 0;
+    char *channel_name;
+    char buf[MAX_MSG_LEN];
+    char tmp_buf[MAX_MSG_LEN];
+    int tmp_length = 0;
+    channel_cache_list_t *temp;
+    LSA *package;
+    u_long sourceID;
+
+    for(cur_lsa_channel_p = lsa_header->next; cur_lsa_channel_p != lsa_footer; cur_lsa_channel_p = cur_lsa_channel_p->next){
+       package = cur_lsa_channel_p->package;
+       for( i = 0; i < package->num_channel_entries; i++){
+            channel_name = package->channel_entries[i];
+            for(cur_lsa_sender_p = lsa_header->next; cur_lsa_sender_p != lsa_footer; cur_lsa_sender_p = cur_lsa_sender_p->next){
+                sourceID = cur_lsa_sender_p->package->sender_id;
+                temp = insert_channel_cache_item(sourceID, channel_name);
+                if(temp->channel_item.size){
+                    total_num_channel_item++;
+                    length += snprintf(buf + length, MAX_MSG_LEN - length, "%s %lu", channel_name, sourceID);
+                    for(j = 0; j < temp->channel_item.size; j++){   
+                        length += snprintf(buf + length, MAX_MSG_LEN - length, " %lu",temp->channel_item.next_hops[j] );
+                    }
+                    length += snprintf(buf + length, MAX_MSG_LEN - length, "\n");
+                }
+            }
+       }
+    }
+
+    tmp_length += snprintf(tmp_buf+tmp_length, MAX_MSG_LEN - tmp_length, "OK %d\n%s",total_num_channel_item,buf);
+    reply(connfd, tmp_buf);
 }
 
 void handle_NEXTHOP(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_LEN+1], int tokens_num){
@@ -455,11 +487,13 @@ void handle_NEXTHOP(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG_
     user_cache_list_t * temp = insert_user_cache_item(nickname);
     int length = 0;
     char buf[MAX_MSG_LEN];
+    
     if(temp->user_item.next_hop){
         length += snprintf(buf + length, MAX_MSG_LEN - length, "OK %lu %d\n",temp->user_item.next_hop, temp->user_item.distance);
     }else{
         length += snprintf(buf + length, MAX_MSG_LEN - length, "NONE\n");
     }
+    
     reply(connfd,buf);
 }
 
@@ -467,13 +501,23 @@ void handle_NEXTHOPS(int connfd, int udp_fd, char tokens[MAX_MSG_TOKENS][MAX_MSG
     u_long sourceID = strtoul(tokens[1],NULL,10);
     char *channel_name = tokens[2];
     channel_cache_list_t *channel_cache_list_p;
-    
+    int length = 0;
+    int i;
+    char buf[MAX_MSG_LEN];
+
     channel_cache_list_p = insert_channel_cache_item(sourceID, channel_name);
 
-    if(channel_cache_list_p->next_hops[0]){
-
+    if(channel_cache_list_p->channel_item.size){
+        channel_cache_item_t channel_item = channel_cache_list_p->channel_item;
+        length += snprintf(buf + length, MAX_MSG_LEN - length, "OK");
+        for( i = 0; i < channel_cache_list_p->channel_item.size; i ++){
+            length += snprintf(buf + length, MAX_MSG_LEN - length, " %lu",channel_item.next_hops[i]);
+        }
+        length += snprintf(buf + length, MAX_MSG_LEN - length, "\n");
     }else{
-        
+        length += snprintf(buf + length, MAX_MSG_LEN - length, "NONE");
     }
+
+    reply(connfd, buf);
 }
 
