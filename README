@@ -1,5 +1,0 @@
-根目录下的两个测试脚本test_server.sh和test_daemon.sh分别编译生成sircd和srouted两个可执行文件，并将两个文件复制到testcheckpoint1目录下，随后运行测试脚本test_checkpoint1.rb和test_rdaemon.rb
-所以在根目录下使用命令
-	sh test_server.sh
-	sh test_daemon.sh
-即可完成对sircd和srouted的测试工作
