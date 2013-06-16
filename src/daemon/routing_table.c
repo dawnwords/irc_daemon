@@ -1,8 +1,9 @@
 #include "routing_table.h"
 #include "user_cache.h"
+#include "channel_cache.h"
 routing_table *confirmed_header,*confirmed_footer, *tentative_header, *tentative_footer;
 
-
+/* init confirm table and tentative table, should be invoked at the beginning of main */
 void init_routing_table(){
     confirmed_header = (routing_table*) Calloc(1,sizeof(routing_table));
     confirmed_footer = (routing_table*) Calloc(1,sizeof(routing_table));
@@ -15,6 +16,7 @@ void init_routing_table(){
     tentative_footer->prev = tentative_header;    
 }
 
+/* debug function */
 void print_routing_table(){
 	if(DEBUG){		
 		routing_table *temp;
@@ -33,6 +35,10 @@ void print_routing_table(){
 	}
 }
 
+/* 
+ * insert an new routing entry before the given entry pointer
+ * with the given dst_id and path length and copy all the path
+ */
 routing_table *insert_before_routing_table(u_long dst_id,int length,u_long path[32],routing_table *element){
 	routing_table *new_entry = (routing_table *)Malloc(sizeof(routing_table));
 	new_entry->dst_id = dst_id;
@@ -49,15 +55,21 @@ routing_table *insert_before_routing_table(u_long dst_id,int length,u_long path[
 	return new_entry;
 }
 
+/* delete routing entry in its routing table */
 void delete_routing_table(routing_table *element){
 	if(element){
 		element->prev->next = element->next;
 		element->next->prev = element->prev;
 		Free(element);	
-	}
-	
+	}	
 }
 
+/*
+ * delete all the routing entries in confrimed table
+ * and invoke discard to user&channel cache
+ *
+ * discard_tree is invoked when lsa is changed
+ */
 void discard_tree(){
 	routing_table *temp = confirmed_header->next;
 	while(temp != confirmed_footer){
@@ -67,8 +79,10 @@ void discard_tree(){
 	confirmed_header->next = confirmed_footer;
     confirmed_footer->prev = confirmed_header;
     discard_user_cache();
+    discard_channel_cache();
 }
 
+/* return the entry with the given src and dst in confirmed table */
 routing_table *find_in_confirmed(u_long src,u_long dst){
 	routing_table *temp;
 	for(temp = confirmed_header->next;temp != confirmed_footer;temp = temp->next)
@@ -77,6 +91,7 @@ routing_table *find_in_confirmed(u_long src,u_long dst){
 	return NULL;
 }
 
+/* return the entry with the given src and dst in tentative table */
 routing_table *find_in_tentative(u_long src,u_long dst){
 	routing_table *temp;
 	for(temp = tentative_header->next;temp != tentative_footer;temp = temp->next)
@@ -85,6 +100,7 @@ routing_table *find_in_tentative(u_long src,u_long dst){
 	return NULL;	
 }
 
+/* return the entry with the minimal length in tentative table */
 routing_table *find_min_length_in_tentative(){
 	routing_table *temp;
 	routing_table *result = NULL;
@@ -99,6 +115,10 @@ routing_table *find_min_length_in_tentative(){
 	return result;
 }
 
+/* 
+ * return 1 if confirmed table contains path start with the given src
+ * return 0 if not
+ */
 int has_built(u_long src){
 	routing_table *temp;
 	for(temp = confirmed_header->next;temp != confirmed_footer;temp = temp->next)
@@ -107,6 +127,10 @@ int has_built(u_long src){
 	return 0;
 }
 
+/* 
+ * core algorithm for construction routing table 
+ * build shortest path tree on not having been built
+ */
 void build_shortest_path_tree(u_long src){
 	/* if the tree starting at src has not been built, start dijkstra algorithm */
 	if(!has_built(src)){		
@@ -152,6 +176,10 @@ void build_shortest_path_tree(u_long src){
 	}
 }
 
+/* 
+ * return the next hop for given src to dst
+ * return 0 when no such path exists
+ */
 u_long find_next_hop(u_long src,u_long dst,u_long cur){
 	build_shortest_path_tree(src);
 
@@ -166,7 +194,10 @@ u_long find_next_hop(u_long src,u_long dst,u_long cur){
 	return 0;
 }
 
-
+/* 
+ * set given pointer to next_hop and distance for given cur to dst
+ * next_hop is 0 when no such path
+ */
 void find_next_hop_with_distance(u_long cur,u_long dst,u_long* next_hop, int* distance){
 	build_shortest_path_tree(cur);
 

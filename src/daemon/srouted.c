@@ -65,14 +65,15 @@ int main( int argc, char *argv[] ) {
 
     /* initialize lsa list */
     init_LSA_list();
-    init_wait_ack_list();
-    init_user_cache();
+    init_wait_ack_list();    
     init_routing_table();
-    init_self_lsa();
+    init_user_cache(); 
     init_channel_cache();
-
+    init_self_lsa();
 
     maxfd = listen_server_fd > udp_fd ? listen_server_fd:udp_fd;
+
+
     
     while (1) {
 

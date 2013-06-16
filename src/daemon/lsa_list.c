@@ -2,6 +2,7 @@
 
 LSA_list *lsa_header, *lsa_footer;
 
+/* init lsa_list, should be invoked at the beginning of main */
 void init_LSA_list(){
     lsa_header = (LSA_list*) Calloc(1,sizeof(LSA_list));
     lsa_footer = (LSA_list*) Calloc(1,sizeof(LSA_list));
@@ -9,6 +10,7 @@ void init_LSA_list(){
     lsa_footer->prev = lsa_header;    
 }
 
+/* free an given LSA_list entry*/
 void free_LSA_list(LSA_list* LSA_entry){
     if(LSA_entry){
         if(LSA_entry->package){	
@@ -19,6 +21,10 @@ void free_LSA_list(LSA_list* LSA_entry){
     }
 }
 
+/* 
+ * return the LSA_list_entry pointer to the given sender_id 
+ * return NULL on no such an LSA_entry in the list
+ */
 LSA_list* find_LSA_list(unsigned long sender_id){
     LSA_list* temp;
     for(temp = lsa_header->next; temp != lsa_footer; temp = temp->next)
@@ -27,6 +33,16 @@ LSA_list* find_LSA_list(unsigned long sender_id){
     return NULL;
 }
 
+/*
+ * return DISCARD 
+ *		when given new_package has the same seq_num with that in LSA_list
+ * return SEND_BACK 
+ * 		when given new_package has a lower seq_num with that in LSA_list
+ *			and setting LSA_to_send as the package in LSA_list
+ * return CONTINUE_FLOODING when else
+ * 		if no such package is found, insert a new item in LSA_list
+ *			and setting LSA_to_send as the new_package
+ */
 int insert_LSA_list(LSA* new_package,LSA** LSA_to_send){
 	LSA_list* lsa = find_LSA_list(new_package->sender_id);
 	int flag;
@@ -46,9 +62,10 @@ int insert_LSA_list(LSA* new_package,LSA** LSA_to_send){
 		lsa->next = lsa_footer;
 		lsa_footer->prev->next = lsa;
 		lsa_footer->prev = lsa;
-		
-		discard_tree();
 	}
+	// invoke discard tree since LSA_list is modified
+	discard_tree();	
+
 	lsa->package = new_package;
 	lsa->receive_time = time(NULL);
 
@@ -59,20 +76,27 @@ int insert_LSA_list(LSA* new_package,LSA** LSA_to_send){
 	return CONTINUE_FLOODING;		
 }
 
+/* remove an LSA entry in the list */
 void remove_LSA_list(LSA_list* LSA_entry){
 	LSA_entry->prev->next = LSA_entry->next;
 	LSA_entry->next->prev = LSA_entry->prev;
 	free_LSA_list(LSA_entry);
+	// invoke discard tree since LSA_list is modified
 	discard_tree();
 	print_lsa_list();
 }
 
+/* remove the LSA entry with the given sender_id in the list */
 void delete_lsa_by_sender(unsigned long sender_id){
 	LSA_list* LSA = find_LSA_list(sender_id);
 	if(LSA)
 		remove_LSA_list(LSA);
 }
 
+/* 
+ * return the node id containing the nick name if exists 
+ * return 0 if not
+ */
 u_long find_nodeID_by_nickname(char *nickname){
 	LSA_list * cur_lsa_p;
 	int num_user_entries,i;
@@ -89,6 +113,9 @@ u_long find_nodeID_by_nickname(char *nickname){
 	return 0;
 }
 
+/****************************************
+ *			debug function 				*
+ ****************************************/
 void format_package(LSA *package, char *buf){
 	int length = 0;
     length += snprintf(buf + length, MAX_MSG_LEN - length, "{ ttl:%d, type:%s, sender_id:%lu, seq_num:%d, link_entries[",package->ttl, package->type ? "ACK":"LSA", package->sender_id, package->seq_num);
