@@ -1,0 +1,3 @@
+按照修改后的IRC Specification，一个user在没有加入某个channel时是可以向该channel发送消息，但是不能从该channel接收消息。反映在daemon中，当daemon收到CHANTABLE命令时，应该返回以所有node为sourceNode，除去自己的所有channel为目的地，且需要经过自己的NEXTHOPS，而script.rb 测试 CHANTABLE 时认为只有拥有某个channel的node才能作为该channel的sourceNode。
+我们按照脚本的意思写了handle_CHANTABLE()函数（src/daemon/srouted.c）,但是在其中保留了正确反映IRC Specification的版本。
+
