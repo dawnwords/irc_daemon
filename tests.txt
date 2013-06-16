@@ -1,0 +1,5 @@
+除测试脚本所测情况外，本代码能处理的情况：
+1. 某neighbor掉线后，在neighbor_timeout时长后会向其他节点广播该neighbor掉线信息，动态维持网络拓扑结构一直是最新的。
+2. 在lsa_timeout之后，自动移除过期的lsa，更新自己的网络拓扑结构。
+3.对没有收到ack的数据包在retransmission_timeout之后重新发送对方返回ack的LSA数据包。
+4.掉线的node在重新上线向neighbor发送sequence number小的LSA后，会收到自己的更新版本的LSA来重新获得掉线之前的状态，即可以正确处理掉线——上线——重获信息。
