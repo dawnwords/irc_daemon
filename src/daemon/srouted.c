@@ -85,10 +85,8 @@ int main( int argc, char *argv[] ) {
             write_log("time to advertise\n");
             broadcast_self(udp_fd);
         }
-        if(DEBUG){
-            //lsa_timeout & neighbor_timeout is up?
-            remove_expired_lsa_and_neighbor(udp_fd);
-        }
+        //lsa_timeout & neighbor_timeout is up?
+        remove_expired_lsa_and_neighbor(udp_fd);
         
         retransmit_ack(udp_fd);
 
